@@ -16,6 +16,8 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_image QUIET)
 find_package(SDL2_mixer QUIET)
 
+find_package(iniparser REQUIRED)
+
 if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND AND NOT SDL2_image_FOUND)
@@ -43,6 +45,7 @@ add_executable(frozen-bubble
     src/main.cpp
     src/menubutton.cpp
     src/mainmenu.cpp
+    src/gamesettings.cpp
 )
 
 set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
@@ -62,6 +65,7 @@ target_include_directories(frozen-bubble
 target_link_libraries(frozen-bubble PRIVATE
     SDL2::SDL2main
     SDL2::SDL2
+    iniparser-static
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_image>, $<TARGET_NAME_IF_EXISTS:SDL2_image::SDL2_image>>
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_mixer>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_mixer>>
 )

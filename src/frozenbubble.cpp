@@ -1,4 +1,5 @@
 #include "frozenbubble.h"
+#include "gamesettings.h"
 #include <iostream>
 #include "mainmenu.h"
 
@@ -39,10 +40,13 @@ uint8_t FrozenBubble::RunForEver()
         std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
     }
 
+    GameSettings* gameOptions = GameSettings::instance();
+    gameOptions->ReadSettings();
+
     MainMenu main_menu(renderer);
 
-    float g_max_framerate = 60;
-    float g_max_frametime = 1/g_max_framerate * 1000;
+    float framerate = 60;
+    float frametime = 1/framerate * 1000;
 
     unsigned int ticks, lasttick = 0;
     float elapsed = 0;
@@ -85,8 +89,8 @@ uint8_t FrozenBubble::RunForEver()
         SDL_RenderClear(renderer);
         main_menu.Render();
         SDL_RenderPresent(renderer);
-        if(elapsed < g_max_frametime) {
-            SDL_Delay(g_max_frametime - elapsed);
+        if(elapsed < frametime) {
+            SDL_Delay(frametime - elapsed);
         }
     }
     //SDL_Quit(); causes a segfault, i don't know if this is intended

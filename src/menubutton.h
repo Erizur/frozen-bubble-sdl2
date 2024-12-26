@@ -15,7 +15,7 @@ public:
     MenuButton & operator= ( MenuButton && ) = delete;
     ~MenuButton();
     void Render(const SDL_Renderer *renderer);
-    void Animate();
+    void GraphicsModeRel();
     void Activate();
     void Deactivate();
 private:
@@ -23,6 +23,7 @@ private:
     int sheetLen;
     int curFrame;
     int fixedFrame;
+    std::string buttonName;
     std::vector<SDL_Texture*> icons;
     SDL_Rect icon_rect;
     SDL_Texture *backgroundActive;

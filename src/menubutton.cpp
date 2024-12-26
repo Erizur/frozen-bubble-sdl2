@@ -1,4 +1,5 @@
 #include "menubutton.h"
+#include "gamesettings.h"
 #include <SDL2/SDL_image.h>
 #include <utility>
 
@@ -6,19 +7,48 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
     : isActive(false)
 {
     std::string pathBase = std::string(DATA_DIR) + "/gfx/menu/anims/" + icontag + "_";
-    if (name == "graphics") pathBase = std::string(DATA_DIR) + "/gfx/menu/anims/" + "gfx-l2" + "_";
     std::string pathExt = ".png";
 
-    for (int i = 1; i <= sheetlen + 1; i++)
-    {
-        std::string fileName = pathBase;
-        char fileIndex[16];
+    if (name != "graphics") {
+        for (int i = 1; i < sheetlen + 1; i++)
+        {
+            std::string fileName = pathBase;
+            char fileIndex[16];
 
-        sprintf(fileIndex, "%04d", i);
-        fileName += fileIndex;
-        fileName += pathExt;
-        icons.push_back(IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), fileName.c_str()));
+            sprintf(fileIndex, "%04d", i);
+            fileName += fileIndex;
+            fileName += pathExt;
+            icons.push_back(IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), fileName.c_str()));
+        }
+
+        curFrame = 0;
+        sheetLen = sheetlen;
     }
+    else { //graphics mode hot reload quirk
+        for (int i = 0; i <= 2; i++)
+        {
+            pathBase = std::string(DATA_DIR) + "/gfx/menu/anims/gfx-l" + std::to_string(i + 1) + "_";
+            int max = sheetlen;
+            if(i == 3) max = 1;
+            for (int j = 0; j < max; j++)
+            {
+                sheetLen++;
+                std::string fileName = pathBase;
+                char fileIndex[16];
+
+                sprintf(fileIndex, "%04d", j + 1);
+                fileName += fileIndex;
+                fileName += pathExt;
+                icons.push_back(IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), fileName.c_str()));
+            }
+        }
+
+        fixedFrame = (30 * (GameSettings::instance()->gfxLevel() - 1));
+        curFrame = fixedFrame * 2;
+        sheetLen = 60;
+    }
+
+    SDL_Log(std::to_string(sheetLen).c_str());
 
     std::string backgroundActive_path = std::string(DATA_DIR) + "/gfx/menu/txt_" + name + "_over.png";
     backgroundActive= IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), backgroundActive_path.c_str());
@@ -33,14 +63,16 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
     icon_rect.w = 40;
     icon_rect.h = 30;
 
-    curFrame = 0;
-    sheetLen = sheetlen;
+    
+    buttonName = name;
 }
 
 MenuButton::MenuButton(MenuButton &&src) noexcept
     : isActive(std::move(src.isActive)),
     sheetLen(std::move(src.sheetLen)),
     curFrame(std::move(src.curFrame)),
+    fixedFrame(std::move(src.fixedFrame)),
+    buttonName(std::move(src.buttonName)),
     icons(std::move(src.icons)),
     icon_rect(std::move(src.icon_rect)),
     backgroundActive(std::exchange(src.backgroundActive, nullptr)),
@@ -59,10 +91,25 @@ MenuButton::~MenuButton()
 
 void MenuButton::Render(const SDL_Renderer *renderer)
 {
+    if(buttonName == "graphics") {
+        if (GameSettings::instance()->gfxLevel() != 1 && sheetLen != 60) sheetLen = 60;
+        else if (GameSettings::instance()->gfxLevel() == 1 && sheetLen != 30) sheetLen = 30;
+    }
+
     if(isActive){
-        curFrame++;
-        fixedFrame = curFrame / 2;
-        if(fixedFrame >= sheetLen) fixedFrame = curFrame = 0;
+        if(GameSettings::instance()->gfxLevel() != 3)
+        {
+            if(buttonName == "graphics") SDL_Log(std::to_string(fixedFrame).c_str());
+            curFrame++;
+            fixedFrame = curFrame / 2;
+            if(fixedFrame >= sheetLen ) {
+                if(buttonName != "graphics") fixedFrame = curFrame = 0;
+                else {
+                    fixedFrame = curFrame = (30 * (GameSettings::instance()->gfxLevel() - 1)) * 2;
+                }
+            }
+        }
+        if(buttonName == "graphics" && GameSettings::instance()->gfxLevel() == 3) fixedFrame = 60;
         SDL_SetTextureAlphaMod(icons[fixedFrame], 255);
     }
     else {
@@ -70,6 +117,11 @@ void MenuButton::Render(const SDL_Renderer *renderer)
     }
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), isActive?backgroundActive:background, nullptr, &rect);
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), icons[fixedFrame], nullptr, &icon_rect);
+}
+
+void MenuButton::GraphicsModeRel()
+{
+
 }
 
 void MenuButton::Activate()
