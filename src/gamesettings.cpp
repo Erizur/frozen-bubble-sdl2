@@ -12,7 +12,7 @@ void GameSettings::CreateDefaultSettings()
     strcat(setPath, "settings.ini");
     if((setFile = fopen(setPath, "w")) == NULL)
     {
-        SDL_Log("FATAL: Could not create default save file. Exiting.");
+        SDL_LogError(1, "Could not create default save file. Exiting.");
         throw;
     }
     fclose(setFile);
@@ -22,19 +22,19 @@ void GameSettings::CreateDefaultSettings()
 
     rval = iniparser_set(dict, "GFX", NULL);
     if(rval < 0) {
-        SDL_Log("Could not write GFX header to ini file!");
+        SDL_LogWarn(1, "Could not write GFX header to ini file!");
         goto finish;
     }
 
     rval = iniparser_set(dict, "GFX:Quality", "1");
     if(rval < 0) {
-        SDL_Log("Could not write GFX header to ini file!");
+        SDL_LogWarn(1, "Could not write GFX header to ini file!");
         goto finish;
     }
 
     if((setFile = fopen(setPath, "w+")) == NULL)
     {
-        SDL_Log("FATAL: Could not create default save file. Exiting.");
+        SDL_LogError(1, "Could not create default save file. Exiting.");
         throw;
     }
     iniparser_dump_ini(dict, setFile);
@@ -56,7 +56,7 @@ void GameSettings::ReadSettings()
 
     while (dict == NULL)
     {
-        SDL_Log("WARNING: Settings file failed to load (or doesn't exist). Creating default fallback...");
+        SDL_LogWarn(1, "Settings file failed to load (or doesn't exist). Creating default fallback...");
         CreateDefaultSettings();
         dict = iniparser_load(setPath);
     }

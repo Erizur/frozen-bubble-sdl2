@@ -97,15 +97,15 @@ void MenuButton::Render(const SDL_Renderer *renderer)
     }
 
     if(isActive){
-        if(GameSettings::instance()->gfxLevel() != 3)
+        if(GameSettings::instance()->gfxLevel() != 3) // animate if gfx mode isn't 3
         {
-            if(buttonName == "graphics") SDL_Log(std::to_string(fixedFrame).c_str());
             curFrame++;
             fixedFrame = curFrame / 2;
             if(fixedFrame >= sheetLen ) {
                 if(buttonName != "graphics") fixedFrame = curFrame = 0;
-                else {
-                    fixedFrame = curFrame = (30 * (GameSettings::instance()->gfxLevel() - 1)) * 2;
+                else { // for the gfx icon, update in a different way depending on the amount of frames
+                    curFrame = (30 * (GameSettings::instance()->gfxLevel() - 1)) * 2;
+                    fixedFrame = curFrame / 2;
                 }
             }
         }
