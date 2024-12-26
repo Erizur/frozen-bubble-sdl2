@@ -1,10 +1,16 @@
 #include "mainmenu.h"
 #include <SDL2/SDL_image.h>
 
+struct ButtonId {
+    std::string buttonName;
+    std::string iconName;
+    int iconFrames;
+};
+
 MainMenu::MainMenu(const SDL_Renderer *renderer)
     : renderer(renderer), active_button_index(0)
 {
-    std::vector<std::tuple<std::string, std::string, int>> texts = {
+    const ButtonId texts[] = {
         {"1pgame", "1pgame", 30}, 
         {"2pgame", "p1p2", 30}, 
         {"langame", "langame", 70}, 
@@ -15,8 +21,8 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
         {"highscores", "highscore", 89}
     };
     uint32_t y_start = 14;
-    for(const auto& tuple : texts) {
-        buttons.push_back(MenuButton(89, y_start, std::get<0>(tuple), renderer, std::get<1>(tuple), std::get<2>(tuple)));
+    for(const ButtonId button : texts) { // TODO: get rid of compiler warning
+        buttons.push_back(MenuButton(89, y_start, button.buttonName, renderer, button.iconName, button.iconFrames));
         y_start += 56;
     }
 
@@ -43,6 +49,10 @@ void MainMenu::Render(void) {
     for (MenuButton &button : buttons) {
         button.Render(renderer);
     }
+}
+
+void MainMenu::press() {
+    buttons[active_button_index].Pressed();
 }
 
 void MainMenu::down()

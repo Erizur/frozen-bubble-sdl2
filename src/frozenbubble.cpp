@@ -17,6 +17,8 @@ FrozenBubble::~FrozenBubble() {
         SDL_DestroyWindow(window);
         window = nullptr;
     }
+
+    GameSettings::instance()->Dispose();
 }
 
 uint8_t FrozenBubble::RunForEver()
@@ -79,6 +81,9 @@ uint8_t FrozenBubble::RunForEver()
                         case SDLK_DOWN:
                         case SDLK_RIGHT:
                             main_menu.down();
+                            break;
+                        case SDLK_RETURN:
+                            main_menu.press();
                             break;
                     }
                     break;

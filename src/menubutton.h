@@ -15,7 +15,7 @@ public:
     MenuButton & operator= ( MenuButton && ) = delete;
     ~MenuButton();
     void Render(const SDL_Renderer *renderer);
-    void GraphicsModeRel();
+    void Pressed();
     void Activate();
     void Deactivate();
 private:

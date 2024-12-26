@@ -12,7 +12,7 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
     if (name != "graphics") {
         for (int i = 1; i < sheetlen + 1; i++)
         {
-            std::string fileName = pathBase;
+            std::string fileName(pathBase);
             char fileIndex[16];
 
             sprintf(fileIndex, "%04d", i);
@@ -21,7 +21,7 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
             icons.push_back(IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), fileName.c_str()));
         }
 
-        curFrame = 0;
+        fixedFrame = curFrame = 0;
         sheetLen = sheetlen;
     }
     else { //graphics mode hot reload quirk
@@ -48,8 +48,6 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
         sheetLen = 60;
     }
 
-    SDL_Log(std::to_string(sheetLen).c_str());
-
     std::string backgroundActive_path = std::string(DATA_DIR) + "/gfx/menu/txt_" + name + "_over.png";
     backgroundActive= IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), backgroundActive_path.c_str());
     std::string background_path = std::string(DATA_DIR) + "/gfx/menu/txt_" + name + "_off.png";
@@ -63,7 +61,6 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
     icon_rect.w = 40;
     icon_rect.h = 30;
 
-    
     buttonName = name;
 }
 
@@ -91,25 +88,36 @@ MenuButton::~MenuButton()
 
 void MenuButton::Render(const SDL_Renderer *renderer)
 {
+    int gfxLvl = GameSettings::instance()->gfxLevel();
+
     if(buttonName == "graphics") {
-        if (GameSettings::instance()->gfxLevel() != 1 && sheetLen != 60) sheetLen = 60;
-        else if (GameSettings::instance()->gfxLevel() == 1 && sheetLen != 30) sheetLen = 30;
+        if (gfxLvl != 1 && sheetLen != 60) {
+            sheetLen = 60;
+            curFrame = (30 * (gfxLvl - 1)) * 2;
+            fixedFrame = curFrame / 2;
+
+        }
+        else if (gfxLvl == 1 && sheetLen != 30) 
+        {
+            fixedFrame = (curFrame = curFrame / 2) / 2;
+            sheetLen = 30;
+        }
     }
 
     if(isActive){
-        if(GameSettings::instance()->gfxLevel() != 3) // animate if gfx mode isn't 3
+        if(gfxLvl != 3) // animate if gfx mode isn't 3
         {
             curFrame++;
             fixedFrame = curFrame / 2;
             if(fixedFrame >= sheetLen ) {
                 if(buttonName != "graphics") fixedFrame = curFrame = 0;
                 else { // for the gfx icon, update in a different way depending on the amount of frames
-                    curFrame = (30 * (GameSettings::instance()->gfxLevel() - 1)) * 2;
+                    curFrame = (30 * (gfxLvl - 1)) * 2;
                     fixedFrame = curFrame / 2;
                 }
             }
         }
-        if(buttonName == "graphics" && GameSettings::instance()->gfxLevel() == 3) fixedFrame = 60;
+        if(buttonName == "graphics" && gfxLvl == 3) fixedFrame = 60;
         SDL_SetTextureAlphaMod(icons[fixedFrame], 255);
     }
     else {
@@ -119,9 +127,11 @@ void MenuButton::Render(const SDL_Renderer *renderer)
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), icons[fixedFrame], nullptr, &icon_rect);
 }
 
-void MenuButton::GraphicsModeRel()
+void MenuButton::Pressed()
 {
-
+    //oh boy
+    SDL_Log("Pressed!");
+    if(buttonName == "graphics") GameSettings::instance()->SetValue("GFX:Quality", "");
 }
 
 void MenuButton::Activate()

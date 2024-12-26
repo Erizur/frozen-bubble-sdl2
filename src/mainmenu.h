@@ -13,6 +13,7 @@ public:
     MainMenu(const MainMenu&) = delete;
     ~MainMenu();
     void Render(void);
+    void press();
     void up();
     void down();
 private:

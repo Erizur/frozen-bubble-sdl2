@@ -1,7 +1,15 @@
 #include "gamesettings.h"
-#include <iniparser.h>
 
 GameSettings *GameSettings::ptrInstance = new GameSettings(); 
+
+GameSettings::~GameSettings() {
+    iniparser_freedict(optDict);
+}
+
+void GameSettings::Dispose() {
+    SaveSettings();
+    this->~GameSettings();
+}
 
 void GameSettings::CreateDefaultSettings()
 {
@@ -28,7 +36,7 @@ void GameSettings::CreateDefaultSettings()
 
     rval = iniparser_set(dict, "GFX:Quality", "1");
     if(rval < 0) {
-        SDL_LogWarn(1, "Could not write GFX header to ini file!");
+        SDL_LogWarn(1, "Could not write GFX:Quality to ini file!");
         goto finish;
     }
 
@@ -49,24 +57,49 @@ void GameSettings::ReadSettings()
     strcpy(setPath, prefPath);
     strcat(setPath, "settings.ini");
 
-    dictionary *dict;
     //int rval;
 
-    dict = iniparser_load(setPath);
+    optDict = iniparser_load(setPath);
 
-    while (dict == NULL)
+    while (optDict == NULL)
     {
         SDL_LogWarn(1, "Settings file failed to load (or doesn't exist). Creating default fallback...");
         CreateDefaultSettings();
-        dict = iniparser_load(setPath);
+        optDict = iniparser_load(setPath);
     }
 
-    gfxQuality = iniparser_getint(dict, "GFX:Quality", 1);
+    gfxQuality = iniparser_getint(optDict, "GFX:Quality", 1);
     if (gfxQuality > 3 || gfxQuality < 1) gfxQuality = 3;
-    iniparser_freedict(dict);
 }
 
-void GameSettings::GetValue()
+void GameSettings::SaveSettings()
 {
-    
+    FILE *setFile;
+    char setPath[256];
+    strcpy(setPath, prefPath);
+    strcat(setPath, "settings.ini");
+
+    if((setFile = fopen(setPath, "w+")) == NULL)
+    {
+        SDL_LogWarn(1, "Could not save to the save file!");
+        return;
+    }
+    iniparser_dump_ini(optDict, setFile);
+    fclose(setFile);
+}
+
+void GameSettings::SetValue(const char* option, const char* value)
+{
+    //update runtime options
+    if (strcmp(option, "GFX:Quality") == 0) {
+        if (gfxQuality == 1) gfxQuality = 3;
+        else gfxQuality--;
+
+        // gfxQuality needs a hot reload
+        iniparser_set(optDict, option, std::to_string(gfxQuality).c_str());
+        return;
+    }
+
+    //update ini file set
+    iniparser_set(optDict, option, value);
 }
