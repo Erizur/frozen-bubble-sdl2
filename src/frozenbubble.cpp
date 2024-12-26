@@ -56,25 +56,28 @@ uint8_t FrozenBubble::RunForEver()
         SDL_Event e;
         while (SDL_PollEvent (&e)) {
             switch(e.type) {
-            case SDL_WINDOWEVENT:
-                switch (e.window.event) {
-                    case SDL_WINDOWEVENT_CLOSE:
-                    {
-                        IsGameQuit = true;
-                        break;
+                case SDL_WINDOWEVENT:
+                    switch (e.window.event) {
+                        case SDL_WINDOWEVENT_CLOSE:
+                        {
+                            IsGameQuit = true;
+                            break;
+                        }
                     }
-                }
-                break;
-            case SDL_KEYDOWN:
-                switch(e.key.keysym.sym) {
-                    case SDLK_UP:
-                        main_menu.up();
-                        break;
-                    case SDLK_DOWN:
-                        main_menu.down();
-                        break;
-                }
-                break;
+                    break;
+                case SDL_KEYDOWN:
+                    if(e.key.repeat) break;
+                    switch(e.key.keysym.sym) {
+                        case SDLK_UP:
+                        case SDLK_LEFT:
+                            main_menu.up();
+                            break;
+                        case SDLK_DOWN:
+                        case SDLK_RIGHT:
+                            main_menu.down();
+                            break;
+                    }
+                    break;
             }
         }
         // do magic
@@ -86,6 +89,6 @@ uint8_t FrozenBubble::RunForEver()
             SDL_Delay(g_max_frametime - elapsed);
         }
     }
-    SDL_Quit();
+    //SDL_Quit(); causes a segfault, i don't know if this is intended
     return 0;
 }
