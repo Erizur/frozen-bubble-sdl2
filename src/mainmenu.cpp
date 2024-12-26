@@ -4,10 +4,19 @@
 MainMenu::MainMenu(const SDL_Renderer *renderer)
     : renderer(renderer), active_button_index(0)
 {
-    std::string texts[] = {"1pgame", "2pgame", "langame", "netgame", "editor", "graphics", "keys", "highscores"};
+    std::vector<std::tuple<std::string, std::string, int>> texts = {
+        {"1pgame", "1pgame", 30}, 
+        {"2pgame", "p1p2", 30}, 
+        {"langame", "langame", 70}, 
+        {"netgame", "netgame", 89}, 
+        {"editor", "editor", 67}, 
+        {"graphics", "graphics", 30}, 
+        {"keys", "keys", 80}, 
+        {"highscores", "highscore", 89}
+    };
     uint32_t y_start = 14;
-    for(const std::string &text : texts) {
-        buttons.push_back(MenuButton(89, y_start, text, renderer));
+    for(const auto& tuple : texts) {
+        buttons.push_back(MenuButton(89, y_start, std::get<0>(tuple), renderer, std::get<1>(tuple), std::get<2>(tuple)));
         y_start += 56;
     }
 
@@ -31,7 +40,7 @@ MainMenu::~MainMenu() {
 void MainMenu::Render(void) {
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), background, nullptr, nullptr);
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fb_logo, nullptr, &fb_logo_rect);
-    for (const MenuButton &button : buttons) {
+    for (MenuButton &button : buttons) {
         button.Render(renderer);
     }
 }

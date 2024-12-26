@@ -32,7 +32,7 @@ uint8_t FrozenBubble::RunForEver()
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
 
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     if(!renderer) {
         IsGameQuit = true;
@@ -41,7 +41,17 @@ uint8_t FrozenBubble::RunForEver()
 
     MainMenu main_menu(renderer);
 
+    float g_max_framerate = 60;
+    float g_max_frametime = 1/g_max_framerate * 1000;
+
+    unsigned int ticks, lasttick = 0;
+    float elapsed = 0;
+
     while(!IsGameQuit) {
+        lasttick = ticks;
+        ticks = SDL_GetTicks();
+        elapsed = ticks - lasttick;
+
         // handle input
         SDL_Event e;
         while (SDL_PollEvent (&e)) {
@@ -72,6 +82,10 @@ uint8_t FrozenBubble::RunForEver()
         SDL_RenderClear(renderer);
         main_menu.Render();
         SDL_RenderPresent(renderer);
+        if(elapsed < g_max_frametime) {
+            SDL_Delay(g_max_frametime - elapsed);
+        }
     }
+    SDL_Quit();
     return 0;
 }

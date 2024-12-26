@@ -3,22 +3,27 @@
 
 #include <SDL2/SDL.h>
 #include <string>
+#include <vector>
 
 class MenuButton final
 {
 public:
-    MenuButton(uint32_t x, uint32_t y, const std::string &name, const SDL_Renderer *renderer);
+    MenuButton(uint32_t x, uint32_t y, const std::string &name, const SDL_Renderer *renderer, const std::string icontag, const int sheetlen);
     MenuButton(const MenuButton&) = delete;
     MenuButton & operator= ( const MenuButton & ) = delete;
     MenuButton(MenuButton&& src) noexcept;
     MenuButton & operator= ( MenuButton && ) = delete;
     ~MenuButton();
-    void Render(const SDL_Renderer *renderer) const;
+    void Render(const SDL_Renderer *renderer);
+    void Animate();
     void Activate();
     void Deactivate();
 private:
     bool isActive;
-    SDL_Texture *icon;
+    int sheetLen;
+    int curFrame;
+    int fixedFrame;
+    std::vector<SDL_Texture*> icons;
     SDL_Rect icon_rect;
     SDL_Texture *backgroundActive;
     SDL_Texture *background;
