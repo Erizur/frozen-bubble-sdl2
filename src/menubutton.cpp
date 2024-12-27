@@ -80,7 +80,7 @@ MenuButton::MenuButton(MenuButton &&src) noexcept
 
 MenuButton::~MenuButton()
 {
-    for (int i = 0; i < icons.size(); i++) SDL_DestroyTexture(icons[i]);
+    for (long unsigned int i = 0; i < icons.size(); i++) SDL_DestroyTexture(icons[i]);
     icons.clear();
     SDL_DestroyTexture(background);
     SDL_DestroyTexture(backgroundActive);

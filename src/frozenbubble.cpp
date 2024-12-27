@@ -49,7 +49,6 @@ uint8_t FrozenBubble::RunForEver()
     gameOptions->ReadSettings();
 
     AudioMixer* audMixer = AudioMixer::instance();
-    SDL_Log(std::to_string(gameOptions->useClassicAudio()).c_str());
 
     MainMenu main_menu(renderer);
     //audMixer->PlayMusic("intro");

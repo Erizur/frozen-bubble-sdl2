@@ -15,7 +15,7 @@ public:
     void SetValue(const char *option, const char *value);
     void GetValue();
 
-    const char *prefPath = SDL_GetPrefPath("frozen-bubble", "frozen-bubble");
+    const char *prefPath = SDL_GetPrefPath("", "frozen-bubble"); //do not place org name if you don't want duplicated folders!
     int gfxLevel() { return gfxQuality; }
     bool canPlayMusic() { return playMusic; }
     bool canPlaySFX() { return playSfx; }
