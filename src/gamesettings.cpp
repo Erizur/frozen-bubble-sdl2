@@ -33,10 +33,30 @@ void GameSettings::CreateDefaultSettings()
         SDL_LogWarn(1, "Could not write GFX header to ini file!");
         goto finish;
     }
-
     rval = iniparser_set(dict, "GFX:Quality", "1");
     if(rval < 0) {
         SDL_LogWarn(1, "Could not write GFX:Quality to ini file!");
+        goto finish;
+    }
+
+    rval = iniparser_set(dict, "Sound", NULL);
+    if(rval < 0) {
+        SDL_LogWarn(1, "Could not write Sound header to ini file!");
+        goto finish;
+    }
+    rval = iniparser_set(dict, "Sound:EnableMusic", "true");
+    if(rval < 0) {
+        SDL_LogWarn(1, "Could not write Sound:EnableMusic to ini file!");
+        goto finish;
+    }
+    rval = iniparser_set(dict, "Sound:EnableSFX", "true");
+    if(rval < 0) {
+        SDL_LogWarn(1, "Could not write Sound:EnableSFX to ini file!");
+        goto finish;
+    }
+    rval = iniparser_set(dict, "Sound:ClassicAF", "false");
+    if(rval < 0) {
+        SDL_LogWarn(1, "Could not write Sound:EnableSFX to ini file!");
         goto finish;
     }
 
@@ -70,6 +90,10 @@ void GameSettings::ReadSettings()
 
     gfxQuality = iniparser_getint(optDict, "GFX:Quality", 1);
     if (gfxQuality > 3 || gfxQuality < 1) gfxQuality = 3;
+
+    playMusic = iniparser_getboolean(optDict, "Sound:EnableMusic", true);
+    playSfx = iniparser_getboolean(optDict, "Sound:EnableSFX", true);
+    classicSound = iniparser_getboolean(optDict, "Sound:ClassicAF", false);
 }
 
 void GameSettings::SaveSettings()

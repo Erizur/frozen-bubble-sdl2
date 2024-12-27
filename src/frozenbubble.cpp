@@ -1,5 +1,7 @@
 #include "frozenbubble.h"
 #include "gamesettings.h"
+#include "audiomixer.h"
+
 #include <iostream>
 #include "mainmenu.h"
 
@@ -18,6 +20,7 @@ FrozenBubble::~FrozenBubble() {
         window = nullptr;
     }
 
+    AudioMixer::instance()->Dispose();
     GameSettings::instance()->Dispose();
 }
 
@@ -45,7 +48,11 @@ uint8_t FrozenBubble::RunForEver()
     GameSettings* gameOptions = GameSettings::instance();
     gameOptions->ReadSettings();
 
+    AudioMixer* audMixer = AudioMixer::instance();
+    SDL_Log(std::to_string(gameOptions->useClassicAudio()).c_str());
+
     MainMenu main_menu(renderer);
+    //audMixer->PlayMusic("intro");
 
     float framerate = 60;
     float frametime = 1/framerate * 1000;

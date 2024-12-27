@@ -17,6 +17,9 @@ public:
 
     const char *prefPath = SDL_GetPrefPath("frozen-bubble", "frozen-bubble");
     int gfxLevel() { return gfxQuality; }
+    bool canPlayMusic() { return playMusic; }
+    bool canPlaySFX() { return playSfx; }
+    bool useClassicAudio() { return classicSound; } 
 
     GameSettings(const GameSettings& obj) = delete;
     void Dispose();
@@ -28,6 +31,7 @@ private:
     dictionary *optDict;
 
     int gfxQuality;
+    bool playMusic, playSfx, classicSound;
 
     GameSettings(){};
     ~GameSettings();

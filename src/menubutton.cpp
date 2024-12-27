@@ -130,7 +130,6 @@ void MenuButton::Render(const SDL_Renderer *renderer)
 void MenuButton::Pressed()
 {
     //oh boy
-    SDL_Log("Pressed!");
     if(buttonName == "graphics") GameSettings::instance()->SetValue("GFX:Quality", "");
 }
 

@@ -1,4 +1,6 @@
 #include "mainmenu.h"
+#include "audiomixer.h"
+
 #include <SDL2/SDL_image.h>
 
 struct ButtonId {
@@ -35,6 +37,8 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     fb_logo_rect.w = 190;
     fb_logo_rect.h = 119;
     buttons[active_button_index].Activate();
+
+    AudioMixer::instance()->PlayMusic("intro");
 }
 
 MainMenu::~MainMenu() {
@@ -53,6 +57,8 @@ void MainMenu::Render(void) {
 
 void MainMenu::press() {
     buttons[active_button_index].Pressed();
+
+    AudioMixer::instance()->PlaySFX("menu_selected");
 }
 
 void MainMenu::down()
@@ -65,6 +71,8 @@ void MainMenu::down()
     }
 
     buttons[active_button_index].Activate();
+
+    AudioMixer::instance()->PlaySFX("menu_change");
 }
 
 void MainMenu::up()
@@ -78,4 +86,6 @@ void MainMenu::up()
     }
 
     buttons[active_button_index].Activate();
+
+    AudioMixer::instance()->PlaySFX("menu_change");
 }
