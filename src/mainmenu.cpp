@@ -48,12 +48,16 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     bannerSound = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_soundtrack.png");
     bannerLevel = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_leveleditor.png");
 
-    int bannerStart = 1000; int bannerSpacing = 80;
-    int bannerMinX = 304; int bannerMaxX = 596; int bannerY = 243;
-    banner_max = (bannerStart + GetSize(bannerArtwork).x + bannerSpacing +
-                  GetSize(bannerSound).x + bannerSpacing + 
-                  GetSize(bannerCPU).x + bannerSpacing) - (640 - (bannerMaxX - bannerMinX)) + bannerSpacing;
-    banner_rect = {bannerMinX, bannerY, (bannerMaxX - bannerMinX), 30};
+    bannerFormulas[0] = BANNER_START;
+    bannerFormulas[1] = BANNER_START + GetSize(bannerArtwork).x + BANNER_SPACING;
+    bannerFormulas[2] = BANNER_START + GetSize(bannerArtwork).x + BANNER_SPACING
+                        + GetSize(bannerSound).x + BANNER_SPACING;
+    bannerFormulas[3] = BANNER_START + GetSize(bannerArtwork).x + BANNER_SPACING
+                        + GetSize(bannerSound).x + BANNER_SPACING
+                        + GetSize(bannerCPU).x + BANNER_SPACING;
+
+    bannerMax = bannerFormulas[3] - (640 - (BANNER_MAXX - BANNER_MINX)) + BANNER_SPACING;
+    banner_rect = {BANNER_MINX, BANNER_Y, (BANNER_MAXX - BANNER_MINX), 30};
 
     buttons[active_button_index].Activate();
     AudioMixer::instance()->PlayMusic("intro");
@@ -71,10 +75,32 @@ void MainMenu::Render(void) {
     for (MenuButton &button : buttons) {
         button.Render(renderer);
     }
+    BannerRender();
 }
 
 void MainMenu::BannerRender() {
-    
+    bannerCurpos = bannerCurpos != 0 ? bannerCurpos : 670;
+    for(int i = 0; i < 4; i++) {
+        int posX = bannerFormulas[i] - bannerCurpos;
+        SDL_Texture *image = i == 0 ? bannerArtwork : (i == 1 ? bannerSound : (i == 2 ? bannerCPU : bannerLevel));
+        SDL_Point size = GetSize(image);
+        if (posX > bannerMax / 2) posX = bannerFormulas[i] - (bannerCurpos + bannerMax);
+
+        if (posX < BANNER_MAXX && posX + size.x >= 0) {
+            SDL_Rect iRect = {-posX, 0, std::min(size.x + posX, BANNER_MAXX - BANNER_MINX), size.y};
+            SDL_Rect dRect = {iRect.x < 0 ? BANNER_MAXX - (-posX > -iRect.w ? -posX + iRect.w : 0): BANNER_MINX, BANNER_Y, 
+                              iRect.x < 0 ? iRect.w - (-posX > -iRect.w ? posX : 0): iRect.w, size.y};
+            SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), image, &iRect, &dRect);
+        }
+    }
+
+    if(GameSettings::instance()->gfxLevel() > 2) return;
+    if(bannerFU == 0) {
+        bannerCurpos++;
+        bannerFU = BANNER_SLOWDOWN;
+    }
+    else bannerFU--;
+    if(bannerCurpos >= bannerMax) bannerCurpos = 1;
 }
 
 void MainMenu::press() {

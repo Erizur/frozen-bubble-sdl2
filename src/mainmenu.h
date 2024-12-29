@@ -6,6 +6,14 @@
 #include <vector>
 #include <tuple>
 
+#pragma section "banner_defines"
+#define BANNER_START 1000
+#define BANNER_SPACING 80
+#define BANNER_MINX 304
+#define BANNER_MAXX 596
+#define BANNER_Y 243
+#define BANNER_SLOWDOWN 1
+
 class MainMenu final
 {
 public:
@@ -22,8 +30,14 @@ private:
     std::vector<MenuButton> buttons;
     SDL_Texture *background;
     SDL_Texture *fb_logo;
+    //banner
     SDL_Texture *bannerArtwork, *bannerCPU, *bannerLevel, *bannerSound;
-    int banner_max;
+    SDL_Texture *bannerMix;
+    int bannerFU = BANNER_SLOWDOWN;
+    int bannerFormulas[4];
+    int bannerMax;
+    int bannerCurpos;
+    //rest
     SDL_Rect fb_logo_rect, banner_rect;
     uint8_t active_button_index;
 };
