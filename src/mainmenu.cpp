@@ -9,6 +9,12 @@ struct ButtonId {
     int iconFrames;
 };
 
+SDL_Point GetSize(SDL_Texture *texture){
+    SDL_Point size;
+    SDL_QueryTexture(texture, NULL, NULL, &size.x, &size.y);
+    return size;
+}
+
 MainMenu::MainMenu(const SDL_Renderer *renderer)
     : renderer(renderer), active_button_index(0)
 {
@@ -36,8 +42,20 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     fb_logo_rect.y = 15;
     fb_logo_rect.w = 190;
     fb_logo_rect.h = 119;
-    buttons[active_button_index].Activate();
 
+    bannerArtwork = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_artwork.png");
+    bannerCPU = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_cpucontrol.png");
+    bannerSound = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_soundtrack.png");
+    bannerLevel = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_leveleditor.png");
+
+    int bannerStart = 1000; int bannerSpacing = 80;
+    int bannerMinX = 304; int bannerMaxX = 596; int bannerY = 243;
+    banner_max = (bannerStart + GetSize(bannerArtwork).x + bannerSpacing +
+                  GetSize(bannerSound).x + bannerSpacing + 
+                  GetSize(bannerCPU).x + bannerSpacing) - (640 - (bannerMaxX - bannerMinX)) + bannerSpacing;
+    banner_rect = {bannerMinX, bannerY, (bannerMaxX - bannerMinX), 30};
+
+    buttons[active_button_index].Activate();
     AudioMixer::instance()->PlayMusic("intro");
 }
 
@@ -53,6 +71,10 @@ void MainMenu::Render(void) {
     for (MenuButton &button : buttons) {
         button.Render(renderer);
     }
+}
+
+void MainMenu::BannerRender() {
+    
 }
 
 void MainMenu::press() {

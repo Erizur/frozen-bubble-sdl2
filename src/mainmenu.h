@@ -12,6 +12,7 @@ public:
     MainMenu(const SDL_Renderer *renderer);
     MainMenu(const MainMenu&) = delete;
     ~MainMenu();
+    void BannerRender();
     void Render(void);
     void press();
     void up();
@@ -21,7 +22,9 @@ private:
     std::vector<MenuButton> buttons;
     SDL_Texture *background;
     SDL_Texture *fb_logo;
-    SDL_Rect fb_logo_rect;
+    SDL_Texture *bannerArtwork, *bannerCPU, *bannerLevel, *bannerSound;
+    int banner_max;
+    SDL_Rect fb_logo_rect, banner_rect;
     uint8_t active_button_index;
 };
 
