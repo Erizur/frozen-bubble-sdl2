@@ -3,6 +3,8 @@
 
 #include <SDL2/SDL_image.h>
 
+inline int ranrange(int a, int b) { return a + std::rand() % (b + 1 - a); };
+
 struct ButtonId {
     std::string buttonName;
     std::string iconName;
@@ -34,19 +36,19 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
         y_start += 56;
     }
 
-    std::string background_path = std::string(DATA_DIR) + "/gfx/menu/back_start.png";
-    background = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), background_path.c_str());
-    std::string fb_logo_path = std::string(DATA_DIR) + "/gfx/menu/fblogo.png";
-    fb_logo = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), fb_logo_path.c_str());
+    SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
+
+    background = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/back_start.png");
+    fb_logo = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/fblogo.png");
     fb_logo_rect.x = 400;
     fb_logo_rect.y = 15;
     fb_logo_rect.w = 190;
     fb_logo_rect.h = 119;
 
-    bannerArtwork = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_artwork.png");
-    bannerCPU = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_cpucontrol.png");
-    bannerSound = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_soundtrack.png");
-    bannerLevel = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/banner_leveleditor.png");
+    bannerArtwork = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_artwork.png");
+    bannerCPU = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_cpucontrol.png");
+    bannerSound = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_soundtrack.png");
+    bannerLevel = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_leveleditor.png");
 
     bannerFormulas[0] = BANNER_START;
     bannerFormulas[1] = BANNER_START + GetSize(bannerArtwork).x + BANNER_SPACING;
@@ -58,6 +60,16 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
 
     bannerMax = bannerFormulas[3] - (640 - (BANNER_MAXX - BANNER_MINX)) + BANNER_SPACING;
     banner_rect = {BANNER_MINX, BANNER_Y, (BANNER_MAXX - BANNER_MINX), 30};
+
+    blinkGreenL = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/backgrnd-closedeye-left-green.png");
+    blinkGreenR = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/backgrnd-closedeye-right-green.png");
+    blink_green_left = {411, 385, GetSize(blinkGreenL).x, GetSize(blinkGreenL).y};
+    blink_green_right = {434, 378, GetSize(blinkGreenR).x, GetSize(blinkGreenR).y};
+
+    blinkPurpleL = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/backgrnd-closedeye-left-purple.png");
+    blinkPurpleR = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/backgrnd-closedeye-right-purple.png");
+    blink_purple_left = {522, 356, GetSize(blinkPurpleL).x, GetSize(blinkPurpleL).y};
+    blink_purple_right = {535, 356, GetSize(blinkPurpleR).x, GetSize(blinkPurpleR).y};
 
     buttons[active_button_index].Activate();
     AudioMixer::instance()->PlayMusic("intro");
@@ -76,6 +88,7 @@ void MainMenu::Render(void) {
         button.Render(renderer);
     }
     BannerRender();
+    BlinkRender();
 }
 
 void MainMenu::BannerRender() {
@@ -101,6 +114,67 @@ void MainMenu::BannerRender() {
     }
     else bannerFU--;
     if(bannerCurpos >= bannerMax) bannerCurpos = 1;
+}
+
+void MainMenu::BlinkRender() {
+    if(GameSettings::instance()->gfxLevel() > 2) return;
+
+    if (!waitGreen) {
+        if(blinkGreen > 0) {
+            blinkGreen--;
+            if(!blinkGreen) {
+                waitGreen = BLINK_FRAMES;
+                if(ranrange(-1, 3) <= 1) blinkGreen = -(5 * BLINK_SLOWDOWN); 
+            }
+        }
+        else if(blinkGreen < 0) {
+            blinkGreen++;
+            if(!blinkGreen) {
+                waitGreen = BLINK_FRAMES;
+                blinkGreen = 3 * BLINK_SLOWDOWN; 
+            }
+        }
+        else {
+            if(ranrange(0, 200) <= 1) {
+                waitGreen = BLINK_FRAMES;
+                blinkGreen = 3 * BLINK_SLOWDOWN;
+            }
+        }
+    }
+    else {
+        waitGreen--;
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkGreenL, NULL, &blink_green_left);
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkGreenR, NULL, &blink_green_right);
+    }
+    
+    if(!waitPurple) {
+        if(blinkPurple > 0) {
+            blinkPurple--;
+            if(!blinkPurple) {
+                waitPurple = BLINK_FRAMES;
+                if(ranrange(-1, 3) <= 1) blinkPurple = -(5 * BLINK_SLOWDOWN); 
+            }
+        }
+        else if(blinkPurple < 0) {
+            blinkPurple++;
+            if(!blinkPurple) {
+                waitPurple = BLINK_FRAMES;
+                blinkPurple = 3 * BLINK_SLOWDOWN; 
+            }
+        }
+        else {
+            if(ranrange(0, 200) <= 1) {
+                waitPurple = BLINK_FRAMES;
+                blinkPurple = 3 * BLINK_SLOWDOWN;
+            }
+        }
+    }
+    else {
+        waitPurple--;
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkPurpleL, NULL, &blink_purple_left);
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkPurpleR, NULL, &blink_purple_right);
+    }
+
 }
 
 void MainMenu::press() {

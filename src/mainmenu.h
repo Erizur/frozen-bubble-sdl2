@@ -15,13 +15,15 @@
 #define BANNER_SLOWDOWN 1
 #pragma endregion
 
+#define BLINK_FRAMES 5
+#define BLINK_SLOWDOWN 30
+
 class MainMenu final
 {
 public:
     MainMenu(const SDL_Renderer *renderer);
     MainMenu(const MainMenu&) = delete;
     ~MainMenu();
-    void BannerRender();
     void Render(void);
     void press();
     void up();
@@ -33,14 +35,19 @@ private:
     SDL_Texture *fb_logo;
     //banner
     SDL_Texture *bannerArtwork, *bannerCPU, *bannerLevel, *bannerSound;
-    SDL_Texture *bannerMix;
+    SDL_Texture *blinkGreenL, *blinkGreenR, *blinkPurpleL, *blinkPurpleR;
     int bannerFU = BANNER_SLOWDOWN;
     int bannerFormulas[4];
-    int bannerMax;
-    int bannerCurpos;
+    int bannerMax, bannerCurpos;
+    int blinkGreen, blinkPurple, waitGreen, waitPurple;
+    int blinkUpdate = BLINK_FRAMES;
+    bool canUpdateBlink;
     //rest
-    SDL_Rect fb_logo_rect, banner_rect;
+    SDL_Rect fb_logo_rect, banner_rect, blink_green_left, blink_green_right, blink_purple_left, blink_purple_right;
     uint8_t active_button_index;
+
+    void BlinkRender();
+    void BannerRender();
 };
 
 #endif // MAINMENU_H
