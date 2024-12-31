@@ -20,7 +20,7 @@ class ShadedTexture
         bool LoadPixelsFromFile(const char *path );
 
         //Creates image from preloaded pixels
-        bool LoadFromPixels(SDL_Renderer *renderer);
+        bool LoadFromPixels();
 
         #if defined(SDL_TTF_MAJOR_VERSION)
         //Creates image from font string
@@ -31,7 +31,7 @@ class ShadedTexture
         void Release();
 
         //Set color modulation
-        void SetColor( Uint8 red, Uint8 green, Uint8 blue );
+        void SetColor( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
 
         //Set blending
         void SetBlendMode( SDL_BlendMode blending );
@@ -40,7 +40,7 @@ class ShadedTexture
         void SetAlpha( Uint8 alpha );
         
         //Renders texture at given point
-        void Render( SDL_Renderer *renderer, int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+        void Render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
         //Gets image dimensions
         SDL_Point GetSize();
