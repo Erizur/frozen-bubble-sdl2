@@ -9,7 +9,7 @@ bool ShadedTexture::LoadPixelsFromFile(const char *path)
     SDL_Surface* loadedSurface = IMG_Load( path );
     if( loadedSurface == NULL )
     {
-        printf( "Unable to load image %s! SDL_image Error: %s\n", path, IMG_GetError() );
+        printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
     }
     else
     {
