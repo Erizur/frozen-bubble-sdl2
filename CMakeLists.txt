@@ -47,6 +47,7 @@ add_executable(frozen-bubble
     src/mainmenu.cpp
     src/gamesettings.cpp
     src/audiomixer.cpp
+    src/shaderstuff.cpp
 )
 
 set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)

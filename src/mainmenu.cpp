@@ -39,7 +39,7 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
 
     background = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/back_start.png");
-    fb_logo = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/fblogo.png");
+    fbLogo = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/fblogo.png");
     fb_logo_rect.x = 400;
     fb_logo_rect.y = 15;
     fb_logo_rect.w = 190;
@@ -71,24 +71,34 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     blink_purple_left = {522, 356, GetSize(blinkPurpleL).x, GetSize(blinkPurpleL).y};
     blink_purple_right = {535, 356, GetSize(blinkPurpleR).x, GetSize(blinkPurpleR).y};
 
+    InitCandy();
+
     buttons[active_button_index].Activate();
     AudioMixer::instance()->PlayMusic("intro");
 }
 
 MainMenu::~MainMenu() {
     SDL_DestroyTexture(background);
-    SDL_DestroyTexture(fb_logo);
+    SDL_DestroyTexture(fbLogo);
     buttons.clear();
+}
+
+void MainMenu::InitCandy() {
+    candyOrig.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+    candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+
+    candyInit = true;
 }
 
 void MainMenu::Render(void) {
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), background, nullptr, nullptr);
-    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fb_logo, nullptr, &fb_logo_rect);
+    
     for (MenuButton &button : buttons) {
         button.Render(renderer);
     }
     BannerRender();
     BlinkRender();
+    CandyRender();
 }
 
 void MainMenu::BannerRender() {
@@ -175,6 +185,17 @@ void MainMenu::BlinkRender() {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkPurpleR, NULL, &blink_purple_right);
     }
 
+}
+
+void MainMenu::CandyRender() {
+    if (!candyInit || GameSettings::instance()->gfxLevel() > 1) {
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fbLogo, nullptr, &fb_logo_rect);
+        return;
+    }
+    flipflop_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), candyModif.OutputTexture(), nullptr, &fb_logo_rect);
+
+    candyIndex++;
 }
 
 void MainMenu::press() {
