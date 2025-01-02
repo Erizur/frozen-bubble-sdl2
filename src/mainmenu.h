@@ -37,7 +37,7 @@ private:
 
     //candy
     SDL_Texture *fbLogo;
-    TextureEx candyOrig, candyModif;
+    TextureEx candyOrig, candyModif, logoMask;
     int candyIndex = 0;
     bool candyInit = false;
     void InitCandy();
@@ -50,7 +50,7 @@ private:
     int bannerMax, bannerCurpos;
 
     //blink
-    int blinkGreen, blinkPurple, waitGreen, waitPurple;
+    int blinkGreen, blinkPurple, waitGreen = 0, waitPurple = 0;
     int blinkUpdate = BLINK_FRAMES;
     bool canUpdateBlink;
 

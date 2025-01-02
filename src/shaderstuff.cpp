@@ -49,11 +49,11 @@ void synchro_after(SDL_Surface *s)
 {
     myUnlockSurface(s);
     //SDL_RenderPresent();
-    /*to_wait = SDL_GetTicks() - ticks;
+    to_wait = SDL_GetTicks() - ticks;
     if (to_wait < ANIM_SPEED)
     {
         SDL_Delay(ANIM_SPEED - to_wait);
-    }*/
+    }
     //      else { printf("slow (%d)", ANIM_SPEED - to_wait); }
 }
 void fb__out_of_memory(void)

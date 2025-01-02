@@ -86,6 +86,7 @@ MainMenu::~MainMenu() {
 void MainMenu::InitCandy() {
     candyOrig.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
     candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+    logoMask.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo-mask.png");
 
     candyInit = true;
 }
@@ -192,7 +193,7 @@ void MainMenu::CandyRender() {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fbLogo, nullptr, &fb_logo_rect);
         return;
     }
-    tilt_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    stretch_(candyModif.sfc, candyOrig.sfc, candyIndex);
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), candyModif.OutputTexture(), nullptr, &fb_logo_rect);
 
     candyIndex++;
