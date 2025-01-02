@@ -27,6 +27,15 @@ struct TextureEx {
         if(!sfc) SDL_LogWarn(1, "Failed to init SDL_Surface");
     };
 
+    void LoadEmptyAndApply(SDL_Rect *sz, SDL_Renderer* renderer, const char* path){
+        rend = renderer;
+        sfc = SDL_CreateRGBSurface(0, sz->w, sz->h, 32, 0xFF000000, 0xFF0000, 0xFF00, 0xFF);
+        SDL_SetSurfaceBlendMode(sfc, SDL_BLENDMODE_BLEND);
+        SDL_Surface *img = IMG_Load(path); 
+        if(!sfc || !img) SDL_LogWarn(1, "Failed to init SDL_Surface");
+        SDL_BlitSurface(img, new SDL_Rect{0, 0, img->w, img->h}, sfc, new SDL_Rect{sz->x, sz->y, img->w, img->h});
+    };
+
     SDL_Texture *OutputTexture() {
         return SDL_CreateTextureFromSurface(rend, sfc);
     };
