@@ -192,7 +192,7 @@ void MainMenu::CandyRender() {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fbLogo, nullptr, &fb_logo_rect);
         return;
     }
-    waterize_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    tilt_(candyModif.sfc, candyOrig.sfc, candyIndex);
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), candyModif.OutputTexture(), nullptr, &fb_logo_rect);
 
     candyIndex++;

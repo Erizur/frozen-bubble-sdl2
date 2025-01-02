@@ -6,6 +6,7 @@
 
 #include <iconv.h>
 #include <math.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <SDL2/SDL.h>
@@ -117,5 +118,7 @@ void overlook_(SDL_Surface *dest, SDL_Surface *orig, int step, int pivot);
 void snow_(SDL_Surface *dest, SDL_Surface *orig);
 
 void draw_line_(SDL_Surface *surface, int x1, int y1, int x2, int y2, SDL_Color *color);
+
+void init_effects(char* path);
 
 #endif // SHADERSTUFF_H

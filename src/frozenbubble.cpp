@@ -50,6 +50,7 @@ uint8_t FrozenBubble::RunForEver()
 
     AudioMixer* audMixer = AudioMixer::instance();
 
+    init_effects(DATA_DIR);
     MainMenu main_menu(renderer);
     //audMixer->PlayMusic("intro");
 
