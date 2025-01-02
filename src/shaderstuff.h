@@ -1,6 +1,9 @@
 #ifndef SHADERSTUFF_H
 #define SHADERSTUFF_H
 
+#define _USE_MATH_DEFINES
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+
 #include <iconv.h>
 #include <math.h>
 #include <unistd.h>
