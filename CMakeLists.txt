@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(frozen-bubble CXX)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 set(DEFAULT_BUILD_TYPE "Release")
 if(NOT CMAKE_CONFIGURATION_TYPES AND NOT (CMAKE_BUILD_TYPE OR DEFINED ENV{CMAKE_BUILD_TYPE}))
     message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
@@ -16,7 +18,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_image QUIET)
 find_package(SDL2_mixer QUIET)
 
-find_package(iniparser REQUIRED)
+find_package(iniparser REQUIRED static)
 
 if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND)
     find_package(PkgConfig QUIET)

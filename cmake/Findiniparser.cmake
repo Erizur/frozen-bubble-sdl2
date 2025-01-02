@@ -12,6 +12,7 @@ endif()
 
 find_path(iniparser_INCLUDE_PATH
     NAMES "iniparser.h"
+    PATH_SUFFIXES "iniparser"
 )
 
 set(__iniparser_required_vars iniparser_INCLUDE_PATH)
