@@ -31,8 +31,8 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
         {"highscores", "highscore", 89}
     };
     uint32_t y_start = 14;
-    for(const ButtonId button : texts) { // TODO: get rid of compiler warning
-        buttons.push_back(MenuButton(89, y_start, button.buttonName, renderer, button.iconName, button.iconFrames));
+    for(size_t i = 0; i < std::size(texts); i++) { // TODO: get rid of compiler warning
+        buttons.push_back(MenuButton(89, y_start, texts[i].buttonName, renderer, texts[i].iconName, texts[i].iconFrames));
         y_start += 56;
     }
 
@@ -131,7 +131,7 @@ void MainMenu::Render(void) {
 
 void MainMenu::BannerRender() {
     bannerCurpos = bannerCurpos != 0 ? bannerCurpos : 670;
-    for(int i = 0; i < 4; i++) {
+    for(size_t i = 0; i < std::size(bannerFormulas); i++) {
         int posX = bannerFormulas[i] - bannerCurpos;
         SDL_Texture *image = i == 0 ? bannerArtwork : (i == 1 ? bannerSound : (i == 2 ? bannerCPU : bannerLevel));
         SDL_Point size = GetSize(image);
