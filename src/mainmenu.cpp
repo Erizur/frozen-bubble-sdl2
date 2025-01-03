@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL_image.h>
 
-inline int ranrange(int a, int b) { return a + std::rand() % (b + 1 - a); };
+inline int ranrange(int a, int b) { return a + rand() % ((b - a ) + 1); }
 
 struct ButtonId {
     std::string buttonName;
@@ -44,6 +44,7 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     fb_logo_rect.y = 15;
     fb_logo_rect.w = 190;
     fb_logo_rect.h = 119;
+    candy_fb_rect = SDL_Rect(fb_logo_rect);
 
     bannerArtwork = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_artwork.png");
     bannerCPU = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/banner_cpucontrol.png");
@@ -85,8 +86,34 @@ MainMenu::~MainMenu() {
 
 void MainMenu::InitCandy() {
     candyOrig.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
-    candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
-    logoMask.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo-mask.png");
+    candyMethod = ranrange(0, 8);
+
+    if (candyMethod == 3) { // stretch
+        candy_fb_rect.x -= (int)(fb_logo_rect.w * 0.05);
+        candy_fb_rect.y -= (int)(fb_logo_rect.h * 0.05);
+        candyModif.LoadEmptyAndApply(new SDL_Rect{(int)(fb_logo_rect.w * 0.05), (int)(fb_logo_rect.h * 0.05), (int)(fb_logo_rect.w * 1.1), (int)(fb_logo_rect.h * 1.1)}, const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+        SDL_FreeSurface(candyOrig.sfc);
+        candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
+    }
+    else if (candyMethod == 4) { // tilt
+        candy_fb_rect.x -= (int)(fb_logo_rect.w * 0.05);
+        candy_fb_rect.y -= (int)(fb_logo_rect.h * 0.025);
+        candyModif.LoadEmptyAndApply(new SDL_Rect{(int)(fb_logo_rect.w * 0.05), (int)(fb_logo_rect.h * 0.025), (int)(fb_logo_rect.w * 1.1), (int)(fb_logo_rect.h * 1.05)}, const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+        SDL_FreeSurface(candyOrig.sfc);
+        candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
+    }
+    else if (candyMethod == 5) {
+        candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+        logoMask.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo-mask.png"); // points
+    }
+    else if (candyMethod == 8) { //snow
+        candy_fb_rect.x -= (int)(fb_logo_rect.w * 0.05);
+        candyModif.LoadEmptyAndApply(new SDL_Rect{(int)(fb_logo_rect.w * 0.05), candy_fb_rect.y, (int)(fb_logo_rect.w * 1.1), fb_logo_rect.h + candy_fb_rect.y}, const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
+        SDL_FreeSurface(candyOrig.sfc);
+        candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
+        candy_fb_rect.y = 0;
+    }
+    else candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
 
     candyInit = true;
 }
@@ -130,12 +157,12 @@ void MainMenu::BannerRender() {
 void MainMenu::BlinkRender() {
     if(GameSettings::instance()->gfxLevel() > 2) return;
 
-    if (!waitGreen) {
+    if (waitGreen <= 0) {
         if(blinkGreen > 0) {
             blinkGreen--;
             if(!blinkGreen) {
                 waitGreen = BLINK_FRAMES;
-                if(ranrange(-1, 3) <= 1) blinkGreen = -(5 * BLINK_SLOWDOWN); 
+                if(ranrange(0, 3) <= 1) blinkGreen = -(5 * BLINK_SLOWDOWN); 
             }
         }
         else if(blinkGreen < 0) {
@@ -158,12 +185,12 @@ void MainMenu::BlinkRender() {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), blinkGreenR, NULL, &blink_green_right);
     }
     
-    if(!waitPurple) {
+    if(waitPurple <= 0) {
         if(blinkPurple > 0) {
             blinkPurple--;
             if(!blinkPurple) {
                 waitPurple = BLINK_FRAMES;
-                if(ranrange(-1, 3) <= 1) blinkPurple = -(5 * BLINK_SLOWDOWN); 
+                if(ranrange(0, 3) <= 1) blinkPurple = -(5 * BLINK_SLOWDOWN); 
             }
         }
         else if(blinkPurple < 0) {
@@ -193,9 +220,18 @@ void MainMenu::CandyRender() {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fbLogo, nullptr, &fb_logo_rect);
         return;
     }
-    stretch_(candyModif.sfc, candyOrig.sfc, candyIndex);
-    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), candyModif.OutputTexture(), nullptr, &fb_logo_rect);
 
+    if (candyMethod == 0)       rotate_bilinear_(candyModif.sfc, candyOrig.sfc, SDL_sin(candyIndex/40.0)/10.0);
+    else if(candyMethod == 1)   flipflop_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 2)   enlighten_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 3)   stretch_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 4)   tilt_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 5)   points_(candyModif.sfc, candyOrig.sfc, logoMask.sfc);
+    else if(candyMethod == 6)   waterize_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 7)   brokentv_(candyModif.sfc, candyOrig.sfc, candyIndex);
+    else if(candyMethod == 8)   snow_(candyModif.sfc, candyOrig.sfc);
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), candyModif.OutputTexture(), nullptr, &candy_fb_rect);
     candyIndex++;
 }
 

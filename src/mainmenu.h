@@ -36,26 +36,29 @@ private:
     SDL_Texture *background;
 
     //candy
+    SDL_Rect fb_logo_rect, candy_fb_rect;
     SDL_Texture *fbLogo;
     TextureEx candyOrig, candyModif, logoMask;
     int candyIndex = 0;
+    int candyMethod = 0;
     bool candyInit = false;
     void InitCandy();
     
     //banner
+    SDL_Rect banner_rect;
     SDL_Texture *bannerArtwork, *bannerCPU, *bannerLevel, *bannerSound;
     SDL_Texture *blinkGreenL, *blinkGreenR, *blinkPurpleL, *blinkPurpleR;
     int bannerFU = BANNER_SLOWDOWN;
     int bannerFormulas[4];
-    int bannerMax, bannerCurpos;
+    int bannerMax = 0, bannerCurpos = 0;
 
     //blink
-    int blinkGreen, blinkPurple, waitGreen = 0, waitPurple = 0;
+    SDL_Rect blink_green_left, blink_green_right, blink_purple_left, blink_purple_right;
+    int blinkGreen = 0, blinkPurple = 0, waitGreen = 0, waitPurple = 0;
     int blinkUpdate = BLINK_FRAMES;
     bool canUpdateBlink;
 
     //rest
-    SDL_Rect fb_logo_rect, banner_rect, blink_green_left, blink_green_right, blink_purple_left, blink_purple_right;
     uint8_t active_button_index;
 
     void BlinkRender();
