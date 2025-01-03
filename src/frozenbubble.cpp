@@ -92,6 +92,16 @@ uint8_t FrozenBubble::RunForEver()
                         case SDLK_RETURN:
                             main_menu.press();
                             break;
+                        case SDLK_ESCAPE:
+                            IsGameQuit = true;
+                            break;
+                        case SDLK_F11: // mute / unpause audio
+                            if(audMixer->IsHalted() == true) {
+                                audMixer->MuteAll(true);
+                                audMixer->PlayMusic("intro");
+                            }
+                            else audMixer->MuteAll();
+                            break;
                     }
                     break;
             }

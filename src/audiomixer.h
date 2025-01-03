@@ -15,6 +15,9 @@ public:
     void PlayMusic(const char *track);
     void PlaySFX(const char *sfx);
 
+    void MuteAll(bool enable = false);
+    bool IsHalted() { return haltedMixer; };
+
     AudioMixer(const AudioMixer& obj) = delete;
     void Dispose();
     static AudioMixer* instance();
@@ -34,7 +37,7 @@ private:
     static AudioMixer* ptrInstance;
     GameSettings* gameSettings;
 
-    bool mixerEnabled = true;
+    bool mixerEnabled = true, haltedMixer = false;
     Mix_Music* curMusic;
 };
 

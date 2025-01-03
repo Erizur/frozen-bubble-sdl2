@@ -52,7 +52,7 @@ void AudioMixer::Dispose(){
 
 void AudioMixer::PlayMusic(const char *track)
 {
-    if(mixerEnabled == false || !gameSettings->canPlayMusic()) return;
+    if(mixerEnabled == false || !gameSettings->canPlayMusic() || haltedMixer == true) return;
 
     while (Mix_FadingMusic()) SDL_Delay(10);
     if (Mix_PlayingMusic()) Mix_FadeOutMusic(500);
@@ -76,6 +76,15 @@ void AudioMixer::PlayMusic(const char *track)
 
 void AudioMixer::PlaySFX(const char *sfx)
 {
-    if(mixerEnabled == false || gameSettings->canPlaySFX() == false) return;
+    if(mixerEnabled == false || gameSettings->canPlaySFX() == false || haltedMixer == true) return;
     if (Mix_PlayChannel(-1, GetSFX(sfx), 0) < 0) SDL_LogError(1, "Could not play sound because of: %s", SDL_GetError());
+}
+
+void AudioMixer::MuteAll(bool enable){
+    if(enable == true) haltedMixer = false;
+    else {
+        Mix_HaltMusic();
+        Mix_HaltChannel(-1);
+        haltedMixer = true;
+    }
 }
