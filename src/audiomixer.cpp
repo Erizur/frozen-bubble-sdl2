@@ -12,7 +12,7 @@ const struct MusicFile
 
 AudioMixer *AudioMixer::ptrInstance = NULL;
 
-AudioMixer *AudioMixer::instance()
+AudioMixer *AudioMixer::Instance()
 {
     if(ptrInstance == NULL)
         ptrInstance = new AudioMixer();
@@ -21,7 +21,7 @@ AudioMixer *AudioMixer::instance()
 
 AudioMixer::AudioMixer()
 {
-    gameSettings = GameSettings::instance();
+    gameSettings = GameSettings::Instance();
 
     int freq = gameSettings->useClassicAudio() ? 22050 : MIX_DEFAULT_FREQUENCY;
     int sampl = gameSettings->useClassicAudio() ? 1024 : 4096;

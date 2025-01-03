@@ -75,7 +75,6 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     InitCandy();
 
     buttons[active_button_index].Activate();
-    AudioMixer::instance()->PlayMusic("intro");
 }
 
 MainMenu::~MainMenu() {
@@ -161,7 +160,7 @@ void MainMenu::BannerRender() {
         }
     }
 
-    if(GameSettings::instance()->gfxLevel() > 2) return;
+    if(GameSettings::Instance()->gfxLevel() > 2) return;
     if(bannerFU == 0) {
         bannerCurpos++;
         bannerFU = BANNER_SLOWDOWN;
@@ -171,7 +170,7 @@ void MainMenu::BannerRender() {
 }
 
 void MainMenu::BlinkRender() {
-    if(GameSettings::instance()->gfxLevel() > 2) return;
+    if(GameSettings::Instance()->gfxLevel() > 2) return;
 
     if (waitGreen <= 0) {
         if(blinkGreen > 0) {
@@ -232,7 +231,7 @@ void MainMenu::BlinkRender() {
 }
 
 void MainMenu::CandyRender() {
-    if (!candyInit || GameSettings::instance()->gfxLevel() > 1) {
+    if (!candyInit || GameSettings::Instance()->gfxLevel() > 1) {
         SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), fbLogo, nullptr, &fb_logo_rect);
         return;
     }
@@ -254,7 +253,7 @@ void MainMenu::CandyRender() {
 void MainMenu::press() {
     buttons[active_button_index].Pressed();
 
-    AudioMixer::instance()->PlaySFX("menu_selected");
+    AudioMixer::Instance()->PlaySFX("menu_selected");
 }
 
 void MainMenu::down()
@@ -268,7 +267,7 @@ void MainMenu::down()
 
     buttons[active_button_index].Activate();
 
-    AudioMixer::instance()->PlaySFX("menu_change");
+    AudioMixer::Instance()->PlaySFX("menu_change");
 }
 
 void MainMenu::up()
@@ -283,5 +282,5 @@ void MainMenu::up()
 
     buttons[active_button_index].Activate();
 
-    AudioMixer::instance()->PlaySFX("menu_change");
+    AudioMixer::Instance()->PlaySFX("menu_change");
 }

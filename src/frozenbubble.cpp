@@ -1,12 +1,40 @@
 #include "frozenbubble.h"
-#include "gamesettings.h"
-#include "audiomixer.h"
 
-#include <iostream>
-#include "mainmenu.h"
+FrozenBubble *FrozenBubble::ptrInstance = NULL;
 
-FrozenBubble::FrozenBubble() : IsGameQuit(false)
+FrozenBubble *FrozenBubble::Instance()
 {
+    if(ptrInstance == NULL)
+        ptrInstance = new FrozenBubble();
+    return ptrInstance;
+}
+
+FrozenBubble::FrozenBubble() {
+    window = SDL_CreateWindow("Frozen-Bubble", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
+
+    if(!window) {
+        IsGameQuit = true;
+        std::cout << "Failed to create window: " << SDL_GetError() << std::endl;
+    }
+
+    SDL_Surface *icon = SDL_LoadBMP(DATA_DIR "/gfx/pinguins/window_icon_penguin.bmp");
+    SDL_SetWindowIcon(window, icon);
+    SDL_FreeSurface(icon);
+
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    if(!renderer) {
+        IsGameQuit = true;
+        std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
+    }
+
+    gameOptions = GameSettings::Instance();
+    gameOptions->ReadSettings();
+
+    audMixer = AudioMixer::Instance();
+
+    init_effects(DATA_DIR);
+    mainMenu = new MainMenu(renderer);
 }
 
 FrozenBubble::~FrozenBubble() {
@@ -20,39 +48,14 @@ FrozenBubble::~FrozenBubble() {
         window = nullptr;
     }
 
-    AudioMixer::instance()->Dispose();
-    GameSettings::instance()->Dispose();
+    audMixer->Dispose();
+    gameOptions->Dispose();
 }
 
 uint8_t FrozenBubble::RunForEver()
 {
-    window = SDL_CreateWindow("Frozen-Bubble", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
-
-    if(!window) {
-        IsGameQuit = true;
-        std::cout << "Failed to create window: " << SDL_GetError() << std::endl;
-    }
-
-    std::string icon_path = std::string(DATA_DIR) + "/gfx/pinguins/window_icon_penguin.bmp";
-    SDL_Surface *icon = SDL_LoadBMP(icon_path.c_str());
-    SDL_SetWindowIcon(window, icon);
-    SDL_FreeSurface(icon);
-
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
-    if(!renderer) {
-        IsGameQuit = true;
-        std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
-    }
-
-    GameSettings* gameOptions = GameSettings::instance();
-    gameOptions->ReadSettings();
-
-    AudioMixer* audMixer = AudioMixer::instance();
-
-    init_effects(DATA_DIR);
-    MainMenu main_menu(renderer);
-    //audMixer->PlayMusic("intro");
+    // on init, try playing one of these songs depending on the current state:
+    if(currentState == TitleScreen) audMixer->PlayMusic("intro");
 
     float framerate = 60;
     float frametime = 1/framerate * 1000;
@@ -68,62 +71,12 @@ uint8_t FrozenBubble::RunForEver()
         // handle input
         SDL_Event e;
         while (SDL_PollEvent (&e)) {
-            switch(e.type) {
-                case SDL_WINDOWEVENT:
-                    switch (e.window.event) {
-                        case SDL_WINDOWEVENT_CLOSE:
-                        {
-                            IsGameQuit = true;
-                            break;
-                        }
-                    }
-                    break;
-                case SDL_KEYDOWN:
-                    if(e.key.repeat) break;
-                    switch(e.key.keysym.sym) {
-                        case SDLK_UP:
-                        case SDLK_LEFT:
-                            main_menu.up();
-                            break;
-                        case SDLK_DOWN:
-                        case SDLK_RIGHT:
-                            main_menu.down();
-                            break;
-                        case SDLK_RETURN:
-                            main_menu.press();
-                            break;
-                        case SDLK_n:
-                            if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) main_menu.RefreshCandy();
-                            break;
-                        case SDLK_PAUSE:
-                            while(1) {
-                                if (SDL_PollEvent(&e)) {
-                                    if(e.type == SDL_KEYDOWN) break;
-                                    else if (e.type == SDL_QUIT) {
-                                        IsGameQuit = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            break;
-                        case SDLK_ESCAPE:
-                            IsGameQuit = true;
-                            break;
-                        case SDLK_F11: // mute / unpause audio
-                            if(audMixer->IsHalted() == true) {
-                                audMixer->MuteAll(true);
-                                audMixer->PlayMusic("intro");
-                            }
-                            else audMixer->MuteAll();
-                            break;
-                    }
-                    break;
-            }
+            HandleInput(&e);
         }
         // do magic
         // render
         SDL_RenderClear(renderer);
-        main_menu.Render();
+        if (currentState == TitleScreen) mainMenu->Render();
         SDL_RenderPresent(renderer);
         if(elapsed < frametime) {
             SDL_Delay(frametime - elapsed);
@@ -131,4 +84,63 @@ uint8_t FrozenBubble::RunForEver()
     }
     //SDL_Quit(); causes a segfault, i don't know if this is intended
     return 0;
+}
+
+void FrozenBubble::HandleInput(SDL_Event *e) {
+    switch(e->type) {
+        case SDL_WINDOWEVENT:
+            switch (e->window.event) {
+                case SDL_WINDOWEVENT_CLOSE:
+                {
+                    IsGameQuit = true;
+                    break;
+                }
+            }
+            break;
+    }
+
+    if(currentState == TitleScreen) {
+        switch(e->type) {
+            case SDL_KEYDOWN:
+                if(e->key.repeat) break;
+                switch(e->key.keysym.sym) {
+                    case SDLK_UP:
+                    case SDLK_LEFT:
+                        mainMenu->up();
+                        break;
+                    case SDLK_DOWN:
+                    case SDLK_RIGHT:
+                        mainMenu->down();
+                        break;
+                    case SDLK_RETURN:
+                        mainMenu->press();
+                        break;
+                    case SDLK_n:
+                        if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) mainMenu->RefreshCandy();
+                        break;
+                    case SDLK_PAUSE:
+                        while(1) {
+                            if (SDL_PollEvent(e)) {
+                                if(e->type == SDL_KEYDOWN) break;
+                                else if (e->type == SDL_QUIT) {
+                                    IsGameQuit = true;
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    case SDLK_ESCAPE:
+                        IsGameQuit = true;
+                        break;
+                    case SDLK_F11: // mute / unpause audio
+                        if(audMixer->IsHalted() == true) {
+                            audMixer->MuteAll(true);
+                            audMixer->PlayMusic("intro");
+                        }
+                        else audMixer->MuteAll();
+                        break;
+                }
+                break;
+        }
+    }
 }

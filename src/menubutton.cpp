@@ -43,7 +43,7 @@ MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SD
             }
         }
 
-        fixedFrame = (30 * (GameSettings::instance()->gfxLevel() - 1));
+        fixedFrame = (30 * (GameSettings::Instance()->gfxLevel() - 1));
         curFrame = fixedFrame * 2;
         sheetLen = 60;
     }
@@ -88,7 +88,7 @@ MenuButton::~MenuButton()
 
 void MenuButton::Render(const SDL_Renderer *renderer)
 {
-    int gfxLvl = GameSettings::instance()->gfxLevel();
+    int gfxLvl = GameSettings::Instance()->gfxLevel();
 
     if(buttonName == "graphics") {
         if (gfxLvl != 1 && sheetLen != 60) {
@@ -130,7 +130,7 @@ void MenuButton::Render(const SDL_Renderer *renderer)
 void MenuButton::Pressed()
 {
     //oh boy
-    if(buttonName == "graphics") GameSettings::instance()->SetValue("GFX:Quality", "");
+    if(buttonName == "graphics") GameSettings::Instance()->SetValue("GFX:Quality", "");
 }
 
 void MenuButton::Activate()

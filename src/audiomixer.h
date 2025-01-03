@@ -20,7 +20,7 @@ public:
 
     AudioMixer(const AudioMixer& obj) = delete;
     void Dispose();
-    static AudioMixer* instance();
+    static AudioMixer* Instance();
 private:
     /*inline static const char * sfxTags[] = {
         "stick", "destroy_group", "newroot",

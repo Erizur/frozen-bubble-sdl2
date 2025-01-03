@@ -23,7 +23,7 @@ public:
 
     GameSettings(const GameSettings& obj) = delete;
     void Dispose();
-    static GameSettings* instance(){
+    static GameSettings* Instance(){
         return ptrInstance;
     };
 private:
