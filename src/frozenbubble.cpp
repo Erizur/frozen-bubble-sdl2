@@ -92,6 +92,20 @@ uint8_t FrozenBubble::RunForEver()
                         case SDLK_RETURN:
                             main_menu.press();
                             break;
+                        case SDLK_n:
+                            if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) main_menu.RefreshCandy();
+                            break;
+                        case SDLK_PAUSE:
+                            while(1) {
+                                if (SDL_PollEvent(&e)) {
+                                    if(e.type == SDL_KEYDOWN) break;
+                                    else if (e.type == SDL_QUIT) {
+                                        IsGameQuit = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
                         case SDLK_ESCAPE:
                             IsGameQuit = true;
                             break;

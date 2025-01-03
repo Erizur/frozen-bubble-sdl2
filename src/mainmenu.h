@@ -27,6 +27,7 @@ public:
     MainMenu(const MainMenu&) = delete;
     ~MainMenu();
     void Render(void);
+    void RefreshCandy();
     void press();
     void up();
     void down();
@@ -40,7 +41,7 @@ private:
     SDL_Texture *fbLogo;
     TextureEx candyOrig, candyModif, logoMask;
     int candyIndex = 0;
-    int candyMethod = 0;
+    int candyMethod = -1;
     bool candyInit = false;
     void InitCandy();
     

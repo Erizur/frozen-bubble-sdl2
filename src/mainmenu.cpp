@@ -86,7 +86,12 @@ MainMenu::~MainMenu() {
 
 void MainMenu::InitCandy() {
     candyOrig.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
-    candyMethod = ranrange(0, 8);
+    if(candyMethod == -1) candyMethod = ranrange(0, 8);
+    else {
+        int a = ranrange(0, 8);
+        while (a == candyMethod) a = ranrange(0, 8);
+        candyMethod = a;
+    }
 
     if (candyMethod == 3) { // stretch
         candy_fb_rect.x -= (int)(fb_logo_rect.w * 0.05);
@@ -94,6 +99,8 @@ void MainMenu::InitCandy() {
         candyModif.LoadEmptyAndApply(new SDL_Rect{(int)(fb_logo_rect.w * 0.05), (int)(fb_logo_rect.h * 0.05), (int)(fb_logo_rect.w * 1.1), (int)(fb_logo_rect.h * 1.1)}, const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
         SDL_FreeSurface(candyOrig.sfc);
         candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
+        candy_fb_rect.w = candyOrig.sfc->w;
+        candy_fb_rect.h = candyOrig.sfc->h;
     }
     else if (candyMethod == 4) { // tilt
         candy_fb_rect.x -= (int)(fb_logo_rect.w * 0.05);
@@ -101,6 +108,8 @@ void MainMenu::InitCandy() {
         candyModif.LoadEmptyAndApply(new SDL_Rect{(int)(fb_logo_rect.w * 0.05), (int)(fb_logo_rect.h * 0.025), (int)(fb_logo_rect.w * 1.1), (int)(fb_logo_rect.h * 1.05)}, const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
         SDL_FreeSurface(candyOrig.sfc);
         candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
+        candy_fb_rect.w = candyOrig.sfc->w;
+        candy_fb_rect.h = candyOrig.sfc->h;
     }
     else if (candyMethod == 5) {
         candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
@@ -112,10 +121,17 @@ void MainMenu::InitCandy() {
         SDL_FreeSurface(candyOrig.sfc);
         candyOrig.LoadFromSurface(candyModif.sfc, const_cast<SDL_Renderer*>(renderer));
         candy_fb_rect.y = 0;
+        candy_fb_rect.w = candyOrig.sfc->w;
+        candy_fb_rect.h = candyOrig.sfc->h;
     }
     else candyModif.LoadTextureData(const_cast<SDL_Renderer*>(renderer), DATA_DIR "/gfx/menu/fblogo.png");
 
     candyInit = true;
+}
+
+void MainMenu::RefreshCandy(){
+    candy_fb_rect = SDL_Rect(fb_logo_rect);
+    InitCandy();
 }
 
 void MainMenu::Render(void) {
