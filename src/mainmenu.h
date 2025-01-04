@@ -2,10 +2,10 @@
 #define MAINMENU_H
 
 #include <SDL2/SDL.h>
+#include <vector>
+
 #include "menubutton.h"
 #include "shaderstuff.h"
-
-#include <vector>
 
 #pragma region "banner_defines"
 #define BANNER_START 1000
@@ -27,9 +27,7 @@ public:
     ~MainMenu();
     void Render(void);
     void RefreshCandy();
-    void press();
-    void up();
-    void down();
+    void HandleInput(SDL_Event *e);
 private:
     const SDL_Renderer *renderer;
     std::vector<MenuButton> buttons;
@@ -60,6 +58,10 @@ private:
 
     //rest
     uint8_t active_button_index;
+
+    void press();
+    void up();
+    void down();
 
     void BlinkRender();
     void BannerRender();

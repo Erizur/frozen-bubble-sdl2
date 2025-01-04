@@ -1,5 +1,6 @@
 #include "mainmenu.h"
 #include "audiomixer.h"
+#include "frozenbubble.h"
 
 #include <SDL2/SDL_image.h>
 
@@ -131,6 +132,51 @@ void MainMenu::InitCandy() {
 void MainMenu::RefreshCandy(){
     candy_fb_rect = SDL_Rect(fb_logo_rect);
     InitCandy();
+}
+
+void MainMenu::HandleInput(SDL_Event *e){
+    switch(e->type) {
+    case SDL_KEYDOWN:
+        if(e->key.repeat) break;
+        switch(e->key.keysym.sym) {
+            case SDLK_UP:
+            case SDLK_LEFT:
+                up();
+                break;
+            case SDLK_DOWN:
+            case SDLK_RIGHT:
+                down();
+                break;
+            case SDLK_RETURN:
+                press();
+                break;
+            case SDLK_n:
+                if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) RefreshCandy();
+                break;
+            case SDLK_PAUSE:
+                while(1) {
+                    if (SDL_PollEvent(e)) {
+                        if(e->type == SDL_KEYDOWN) break;
+                        else if (e->type == SDL_QUIT) {
+                            FrozenBubble::Instance()->CallGameQuit();
+                            break;
+                        }
+                    }
+                }
+                break;
+            case SDLK_ESCAPE:
+                FrozenBubble::Instance()->CallGameQuit();
+                break;
+            case SDLK_F11: // mute / unpause audio
+                if(AudioMixer::Instance()->IsHalted() == true) {
+                    AudioMixer::Instance()->MuteAll(true);
+                    AudioMixer::Instance()->PlayMusic("intro");
+                }
+                else AudioMixer::Instance()->MuteAll();
+                break;
+        }
+        break;
+    }
 }
 
 void MainMenu::Render(void) {

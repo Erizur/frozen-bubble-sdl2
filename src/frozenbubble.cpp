@@ -119,47 +119,6 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
     }
 
     if(currentState == TitleScreen) {
-        switch(e->type) {
-            case SDL_KEYDOWN:
-                if(e->key.repeat) break;
-                switch(e->key.keysym.sym) {
-                    case SDLK_UP:
-                    case SDLK_LEFT:
-                        mainMenu->up();
-                        break;
-                    case SDLK_DOWN:
-                    case SDLK_RIGHT:
-                        mainMenu->down();
-                        break;
-                    case SDLK_RETURN:
-                        mainMenu->press();
-                        break;
-                    case SDLK_n:
-                        if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) mainMenu->RefreshCandy();
-                        break;
-                    case SDLK_PAUSE:
-                        while(1) {
-                            if (SDL_PollEvent(e)) {
-                                if(e->type == SDL_KEYDOWN) break;
-                                else if (e->type == SDL_QUIT) {
-                                    IsGameQuit = true;
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-                    case SDLK_ESCAPE:
-                        IsGameQuit = true;
-                        break;
-                    case SDLK_F11: // mute / unpause audio
-                        if(audMixer->IsHalted() == true) {
-                            audMixer->MuteAll(true);
-                            audMixer->PlayMusic("intro");
-                        }
-                        else audMixer->MuteAll();
-                        break;
-                }
-                break;
-        }
+        mainMenu->HandleInput(e);
     }
 }

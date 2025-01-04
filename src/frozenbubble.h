@@ -22,6 +22,7 @@ class FrozenBubble
 {
 public:
     int startTime = 0, totalBubbles = 0;
+    void CallGameQuit() { IsGameQuit = true; };
 
     uint8_t RunForEver();
     GameState currentState = TitleScreen;
