@@ -2,7 +2,9 @@
 #define SHADERSTUFF_H
 
 #define _USE_MATH_DEFINES
+#if WIN32
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#endif
 
 #include <iconv.h>
 #include <math.h>
