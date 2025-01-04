@@ -6,7 +6,6 @@
 #include "shaderstuff.h"
 
 #include <vector>
-#include <tuple>
 
 #pragma region "banner_defines"
 #define BANNER_START 1000
