@@ -21,6 +21,7 @@ enum GameState {
 class FrozenBubble
 {
 public:
+    int startTime = 0, totalBubbles = 0;
 
     uint8_t RunForEver();
     GameState currentState = TitleScreen;
@@ -28,6 +29,7 @@ public:
     FrozenBubble(const FrozenBubble& obj) = delete;
     static FrozenBubble* Instance();
 private:
+    int addictedTime = 0;
     bool IsGameQuit;
     SDL_Window *window;
     SDL_Renderer *renderer;

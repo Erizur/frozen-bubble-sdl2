@@ -2,6 +2,24 @@
 
 FrozenBubble *FrozenBubble::ptrInstance = NULL;
 
+const char *formatTime(int time){
+    int h = int(time/3600.0);
+    int m = int((time-h*3600)/60.0);
+    int s = int((time-h*3600)-(m*60));
+
+    char *fm = new char[128];
+    if (h > 0) sprintf(fm, "%dh ", h);
+    if (m > 0) {
+        if (h > 0) sprintf(fm + strlen(fm), "%02dm ", m);
+        else sprintf(fm, "%dm ", m);
+    }
+    if (s > 0) {
+        if (m > 0) sprintf(fm + strlen(fm), "%02ds", s);
+        else sprintf(fm, "%ds", s); 
+    }
+    return fm;
+}
+
 FrozenBubble *FrozenBubble::Instance()
 {
     if(ptrInstance == NULL)
@@ -73,7 +91,7 @@ uint8_t FrozenBubble::RunForEver()
         while (SDL_PollEvent (&e)) {
             HandleInput(&e);
         }
-        // do magic
+
         // render
         SDL_RenderClear(renderer);
         if (currentState == TitleScreen) mainMenu->Render();
@@ -82,6 +100,7 @@ uint8_t FrozenBubble::RunForEver()
             SDL_Delay(frametime - elapsed);
         }
     }
+    if(addictedTime != 0) printf("Addicted for %s, %d bubbles were launched.", formatTime(addictedTime), totalBubbles);
     //SDL_Quit(); causes a segfault, i don't know if this is intended
     return 0;
 }
