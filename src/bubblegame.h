@@ -6,6 +6,9 @@
 
 #include <vector>
 
+#pragma region "Bubblegame Defines"
+#pragma endregion
+
 class BubbleGame final
 {
 public:
