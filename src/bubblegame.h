@@ -147,6 +147,7 @@ public:
 
     void Render(void);
     void NewGame(SetupSettings setup);
+    void HandleInput(SDL_Event *e);
 private:
     const SDL_Renderer *renderer;
     SDL_Texture *background;

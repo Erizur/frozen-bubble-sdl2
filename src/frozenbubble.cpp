@@ -51,7 +51,7 @@ FrozenBubble::FrozenBubble() {
 
     audMixer = AudioMixer::Instance();
 
-    init_effects(DATA_DIR);
+    init_effects((char*)DATA_DIR);
     mainMenu = new MainMenu(renderer);
     mainGame = new BubbleGame(renderer);
 }

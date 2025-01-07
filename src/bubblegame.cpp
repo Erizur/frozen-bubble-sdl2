@@ -5,7 +5,7 @@
 BubbleGame::BubbleGame(const SDL_Renderer *renderer) 
     : renderer(renderer)
 {
-    // we mostly don't do anything here. Everything should be setup in NewGame()
+    // We mostly don't do anything here. Everything should be setup in NewGame() instead.
     char path[256];
     for (int i = 0; i < BUBBLE_STYLES; i++)
     {
@@ -30,7 +30,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
 
     if (setup.playerCount == 1){
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
-        penguinSprites[0].LoadPenguin(rend, "p1");
+        penguinSprites[0].LoadPenguin(rend, (char*)"p1");
         audMixer->PlayMusic("main1p");
     }
 
@@ -43,4 +43,8 @@ void BubbleGame::Render() {
 
     SDL_RenderCopy(rend, background, nullptr, nullptr);
     SDL_RenderCopy(rend, penguinSprites[0].CurrentFrame(), nullptr, new SDL_Rect{40, 40, 80, 60});
+}
+
+void BubbleGame::HandleInput(SDL_Event *e) {
+    //TODO: Game input
 }
