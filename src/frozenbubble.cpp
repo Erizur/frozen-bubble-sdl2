@@ -53,6 +53,7 @@ FrozenBubble::FrozenBubble() {
 
     init_effects(DATA_DIR);
     mainMenu = new MainMenu(renderer);
+    mainGame = new BubbleGame(renderer);
 }
 
 FrozenBubble::~FrozenBubble() {
@@ -74,6 +75,7 @@ uint8_t FrozenBubble::RunForEver()
 {
     // on init, try playing one of these songs depending on the current state:
     if(currentState == TitleScreen) audMixer->PlayMusic("intro");
+    mainGame->NewGame({false, 1, false});
 
     float framerate = 60;
     float frametime = 1/framerate * 1000;
@@ -95,6 +97,7 @@ uint8_t FrozenBubble::RunForEver()
         // render
         SDL_RenderClear(renderer);
         if (currentState == TitleScreen) mainMenu->Render();
+        else if (currentState == MainGame) mainGame->Render();
         SDL_RenderPresent(renderer);
         if(elapsed < frametime) {
             SDL_Delay(frametime - elapsed);

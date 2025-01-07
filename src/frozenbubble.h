@@ -10,10 +10,11 @@
 #include "audiomixer.h"
 
 #include "mainmenu.h"
+#include "bubblegame.h"
 
 enum GameState {
     TitleScreen = 0,
-    BubbleGame = 1,
+    MainGame = 1,
     LevelEditor = 2,
     Netplay = 3
 };
@@ -25,7 +26,7 @@ public:
     void CallGameQuit() { IsGameQuit = true; };
 
     uint8_t RunForEver();
-    GameState currentState = TitleScreen;
+    GameState currentState = MainGame;
 
     FrozenBubble(const FrozenBubble& obj) = delete;
     static FrozenBubble* Instance();
@@ -39,6 +40,7 @@ private:
     AudioMixer *audMixer;
 
     MainMenu *mainMenu;
+    BubbleGame *mainGame;
 
     void HandleInput(SDL_Event *e);
 

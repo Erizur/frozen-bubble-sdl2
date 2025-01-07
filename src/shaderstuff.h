@@ -2,7 +2,7 @@
 #define SHADERSTUFF_H
 
 #define _USE_MATH_DEFINES
-#if WIN32
+#ifdef _WIN32
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 #endif
 
