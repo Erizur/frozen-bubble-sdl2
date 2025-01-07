@@ -69,13 +69,13 @@ struct Penguin {
         switch(curAnimation) {
             case 0: curFrame = 20; break;
             case 1: curFrame = curFrame < 21 || curFrame > 50 ? (invertAnimation == true ? 50 : 21) : curFrame; break;
-            case 2: // reuse 4
-            case 4: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? 19 : 2) : curFrame; break;
+            case 2: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(3) : 19) : (curFrame > 19 ? PlayAnimation(3) : 2)) : curFrame; break;
             case 3: curFrame = 1; break;
-            case 5: curFrame = curFrame < 51 || curFrame > 70 ? (invertAnimation == true ? 70 : 51) : curFrame; break;
+            case 4: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(0) : 19) : (curFrame > 19 ? PlayAnimation(0) : 2)) : curFrame; break;
+            case 5: curFrame = curFrame < 51 || curFrame > 70 ? (invertAnimation == true ? (curFrame < 51 ? PlayAnimation(6) : 70) : (curFrame > 70 ? PlayAnimation(6) : 51)) : curFrame; break;
             case 6: curFrame = 71; break;
             case 7: curFrame = curFrame < 51 || curFrame > 71 ? (invertAnimation == true ? 71 : 51) : curFrame; break;
-            case 8: curFrame = curFrame < 1 || curFrame > 74 ? (invertAnimation == true ? 74 : 1) : curFrame; break;
+            case 8: curFrame = curFrame < 1 || curFrame > 74 ? (invertAnimation == true ? (curFrame < 1 ? PlayAnimation(9) : 74) : (curFrame > 74 ? PlayAnimation(9) : 1)) : curFrame; break;
             case 9: curFrame = curFrame < 75 || curFrame > 97 ? (invertAnimation == true ? 97 : 75) : curFrame; break;
             case 10: curFrame = curFrame < 1 || curFrame > 68 ? (invertAnimation == true ? 68 : 1) : curFrame; break;
             case 11: curFrame = curFrame < 1 || curFrame > 64 ? (invertAnimation == true ? (curFrame < 1 ? PlayAnimation(12) : 64) : (curFrame > 64 ? PlayAnimation(12) : 1)) : curFrame; break;

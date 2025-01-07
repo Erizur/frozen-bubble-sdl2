@@ -35,7 +35,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
     }
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
-    penguinSprites[0].PlayAnimation(8);
+    penguinSprites[0].PlayAnimation(7);
 }
 
 void BubbleGame::Render() {
