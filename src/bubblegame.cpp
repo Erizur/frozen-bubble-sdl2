@@ -10,13 +10,13 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
     for (int i = 0; i < BUBBLE_STYLES; i++)
     {
         sprintf(path, DATA_DIR "/gfx/balls/bubble-%d.gif", i);
-        imgBubbles[i] = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), path);
+        imgBubbles[i] = IMG_Load(path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-colourblind-%d.gif", i);
-        imgColorblindBubbles[i] = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), path);
+        imgColorblindBubbles[i] = IMG_Load(path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-%d-mini.png", i);
-        imgMiniBubbles[i] = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), path);
+        imgMiniBubbles[i] = IMG_Load(path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-colourblind-%d-mini.png", i);
-        imgMiniColorblindBubbles[i] = IMG_LoadTexture(const_cast<SDL_Renderer*>(renderer), path);
+        imgMiniColorblindBubbles[i] = IMG_Load(path);
     }
 }
 
@@ -46,5 +46,38 @@ void BubbleGame::Render() {
 }
 
 void BubbleGame::HandleInput(SDL_Event *e) {
-    //TODO: Game input
+    switch(e->type) {
+        case SDL_KEYDOWN:
+            if(e->key.repeat) break;
+            switch(e->key.keysym.sym) {
+                case SDLK_LEFT:
+                    sgho
+                    break;
+                case SDLK_RIGHT:
+                    down();
+                    break;
+                case SDLK_PAUSE:
+                    while(1) {
+                        if (SDL_PollEvent(e)) {
+                            if(e->type == SDL_KEYDOWN) break;
+                            else if (e->type == SDL_QUIT) {
+                                FrozenBubble::Instance()->CallGameQuit();
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case SDLK_ESCAPE:
+                    FrozenBubble::Instance()->CallGameQuit();
+                    break;
+                case SDLK_F11: // mute / unpause audio
+                    if(AudioMixer::Instance()->IsHalted() == true) {
+                        AudioMixer::Instance()->MuteAll(true);
+                        AudioMixer::Instance()->PlayMusic("main1p");
+                    }
+                    else AudioMixer::Instance()->MuteAll();
+                    break;
+            }
+            break;
+    }
 }

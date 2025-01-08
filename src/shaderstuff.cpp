@@ -576,86 +576,81 @@ void rotate_bilinear_(SDL_Surface *dest, SDL_Surface *orig, double angle)
 }
 
 /* assumes the surface is not totally transparent */
-/*AV *autopseudocrop_(SDL_Surface *orig)
-{
+std::vector<int> autopseudocrop(SDL_Surface* orig) {
     int x_ = -1, y_ = -1, w = -1, h = -1;
-    Uint8 *ptr;
-    int Adec = orig->format->Ashift / 8; // Adec is non standard from sdlpango_draw* output
-    AV *ret;
-    if (orig->format->BytesPerPixel != 4)
-    {
-        fprintf(stderr, "autocrop: orig surface must be 32bpp\n");
-        abort();
+    Uint8* ptr;
+    int Adec = orig->format->Ashift / 8; // Adec is non-standard from sdlpango_draw* output
+
+    if (orig->format->BytesPerPixel != 4) {
+        SDL_LogError(1, "autocrop - orig surface must be 32bpp!");
+        std::abort();
     }
-    myLockSurface(orig);
-    y = 0;
-    while (y_ == -1)
-    {
-        ptr = orig->pixels + y * orig->pitch;
-        for (x = 0; x < orig->w; x++)
-        {
-            if (*(ptr + Adec) != 0)
-            {
+
+    // Lock the surface (if needed)
+    if (SDL_MUSTLOCK(orig)) {
+        SDL_LockSurface(orig);
+    }
+
+    // Find top boundary
+    for (int y = 0; y < orig->h; ++y) {
+        ptr = static_cast<Uint8*>(orig->pixels) + y * orig->pitch;
+        for (int x = 0; x < orig->w; ++x) {
+            if (*(ptr + Adec) != 0) {
                 y_ = y;
                 break;
             }
             ptr += 4;
         }
-        y++;
+        if (y_ != -1) break;
     }
-    y = orig->h - 1;
-    while (h == -1)
-    {
-        ptr = orig->pixels + y * orig->pitch;
-        for (x = 0; x < orig->w; x++)
-        {
-            if (*(ptr + Adec) != 0)
-            {
+
+    // Find bottom boundary
+    for (int y = orig->h - 1; y >= 0; --y) {
+        ptr = static_cast<Uint8*>(orig->pixels) + y * orig->pitch;
+        for (int x = 0; x < orig->w; ++x) {
+            if (*(ptr + Adec) != 0) {
                 h = y - y_ + 1;
                 break;
             }
             ptr += 4;
         }
-        y--;
+        if (h != -1) break;
     }
-    x = 0;
-    while (x_ == -1)
-    {
-        ptr = orig->pixels + x * 4;
-        for (y = 0; y < orig->h; y++)
-        {
-            if (*(ptr + Adec) != 0)
-            {
+
+    // Find left boundary
+    for (int x = 0; x < orig->w; ++x) {
+        ptr = static_cast<Uint8*>(orig->pixels) + x * 4;
+        for (int y = 0; y < orig->h; ++y) {
+            if (*(ptr + Adec) != 0) {
                 x_ = x;
                 break;
             }
             ptr += orig->pitch;
         }
-        x++;
+        if (x_ != -1) break;
     }
-    x = orig->w - 1;
-    while (w == -1)
-    {
-        ptr = orig->pixels + x * 4;
-        for (y = 0; y < orig->h; y++)
-        {
-            if (*(ptr + Adec) != 0)
-            {
+
+    // Find right boundary
+    for (int x = orig->w - 1; x >= 0; --x) {
+        ptr = static_cast<Uint8*>(orig->pixels) + x * 4;
+        for (int y = 0; y < orig->h; ++y) {
+            if (*(ptr + Adec) != 0) {
                 w = x - x_ + 1;
                 break;
             }
             ptr += orig->pitch;
         }
-        x--;
+        if (w != -1) break;
     }
-    myUnlockSurface(orig);
-    ret = newAV();
-    av_push(ret, newSViv(x_));
-    av_push(ret, newSViv(y_));
-    av_push(ret, newSViv(w));
-    av_push(ret, newSViv(h));
-    return ret;
-}*/
+
+    // Unlock the surface (if it was locked)
+    if (SDL_MUSTLOCK(orig)) {
+        SDL_UnlockSurface(orig);
+    }
+
+    // Return the results as a vector
+    return {x_, y_, w, h};
+}
 
 /* access interleaved pixels */
 #define CUBIC_ROW(dx, row) transform_cubic(dx, (row)[0], (row)[4], (row)[8], (row)[12])

@@ -10,6 +10,7 @@
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
+#include <vector>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>

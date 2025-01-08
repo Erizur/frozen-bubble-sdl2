@@ -25,6 +25,7 @@
 #define TIMEOUT_PENGUIN_SLEEP 200
 
 #define BUBBLE_STYLES 8
+#define CANON_ROTATIONS_NB 100
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -135,6 +136,25 @@ struct Bubble {
     bool frozen = false; // frozen (game over)
 };
 
+struct Shooter {
+    int bubbleToShow = 0;
+    bool miniShooter = false;
+    bool lowGfx = false;
+    SDL_Surface *shooterSfc;
+    SDL_Renderer *rend;
+    float angle = 0;
+
+    void Initialize(SDL_Renderer *renderer, const char *path) {
+        //if you haven't setted up the miniShooter and lowGfx variables before this, you may be screwed
+        shooterSfc = IMG_Load(path);
+        rend = renderer;
+    }
+
+    SDL_Texture *OutputTexture() {
+        return SDL_CreateTextureFromSurface(rend, shooterSfc);
+    };
+};
+
 struct SetupSettings {
     bool chainReaction = false;
     int playerCount = 1;
@@ -155,11 +175,11 @@ private:
     const SDL_Renderer *renderer;
     SDL_Texture *background;
 
-    SDL_Texture *imgColorblindBubbles[BUBBLE_STYLES];
-    SDL_Texture *imgBubbles[BUBBLE_STYLES];
+    SDL_Surface *imgColorblindBubbles[BUBBLE_STYLES];
+    SDL_Surface *imgBubbles[BUBBLE_STYLES];
 
-    SDL_Texture *imgMiniColorblindBubbles[BUBBLE_STYLES];
-    SDL_Texture *imgMiniBubbles[BUBBLE_STYLES];
+    SDL_Surface *imgMiniColorblindBubbles[BUBBLE_STYLES];
+    SDL_Surface *imgMiniBubbles[BUBBLE_STYLES];
 
     Penguin penguinSprites[5];
     SDL_Texture *pausePenguin[35];
