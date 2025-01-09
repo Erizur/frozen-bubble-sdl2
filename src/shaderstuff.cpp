@@ -576,6 +576,7 @@ void rotate_bilinear_(SDL_Surface *dest, SDL_Surface *orig, double angle)
 }
 
 /* assumes the surface is not totally transparent */
+// seems like this was just used to crop extra pixels when rotating the shooter. not needed anymore i think
 std::vector<int> autopseudocrop(SDL_Surface* orig) {
     int x_ = -1, y_ = -1, w = -1, h = -1;
     Uint8* ptr;

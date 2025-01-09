@@ -121,7 +121,6 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
             break;
     }
 
-    if(currentState == TitleScreen) {
-        mainMenu->HandleInput(e);
-    }
+    if(currentState == TitleScreen) mainMenu->HandleInput(e);
+    if(currentState == MainGame) mainGame->HandleInput(e);
 }

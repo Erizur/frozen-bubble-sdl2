@@ -1,6 +1,8 @@
 #ifndef BUBBLEGAME_H
 #define BUBBLEGAME_H
 
+#define M_PI 3.14159265358979323846
+
 #include <SDL2/SDL.h>
 #include "shaderstuff.h"
 
@@ -21,11 +23,11 @@
 #define PENGUIN_WINFC 68
 #define PENGUIN_LOSEFC 158
 
-#define PENGUIN_FRAMEWAIT 3
+#define PENGUIN_FRAMEWAIT 1
 #define TIMEOUT_PENGUIN_SLEEP 200
 
 #define BUBBLE_STYLES 8
-#define CANON_ROTATIONS_NB 100
+#define LAUNCHER_SPEED 0.015
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -37,8 +39,11 @@ struct Penguin {
     // curAnimation up to 13 values
     int curAnimation = 0, curFrame = 1, waitFrame = 0;
     bool invertAnimation = false;
+    SDL_Renderer *rend;
 
     void LoadPenguin(SDL_Renderer* renderer, char *whichOne) {
+        rend = renderer;
+
         char path[256];
         for (int i = 0; i < PENGUIN_HANDLEFC; i++) {
             sprintf(path, DATA_DIR "/gfx/pinguins/anime-shooter_%s_%04d.png", whichOne, i + 1);
@@ -67,12 +72,13 @@ struct Penguin {
         if (curAnimation == 2 || curAnimation == 7) invertAnimation = true;
         else invertAnimation = false;
 
-        if (curAnimation == 2) curFrame = 19;
+        if (curAnimation == 1) curFrame = 21;
+        else if (curAnimation == 2) curFrame = 19;
         else if (curAnimation == 7) curFrame =71;
 
         switch(curAnimation) {
             case 0: curFrame = 20; break;
-            case 1: curFrame = curFrame < 21 || curFrame > 50 ? (invertAnimation == true ? 50 : 21) : curFrame; break;
+            case 1: curFrame = curFrame < 21 || curFrame > 50 ? (invertAnimation == true ? (curFrame < 21 ? PlayAnimation(0) : 50) : (curFrame > 50 ? PlayAnimation(0) : 21)) : curFrame; break;
             case 2: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(3) : 19) : (curFrame > 19 ? PlayAnimation(3) : 2)) : curFrame; break;
             case 3: curFrame = 1; break;
             case 4: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(0) : 19) : (curFrame > 19 ? PlayAnimation(0) : 2)) : curFrame; break;
@@ -103,7 +109,7 @@ struct Penguin {
 
         switch(curAnimation) {
             case 0: curFrame = 20; break;
-            case 1: curFrame = curFrame < 21 || curFrame > 50 ? (invertAnimation == true ? 50 : 21) : curFrame; break;
+            case 1: curFrame = curFrame < 21 || curFrame > 50 ? (invertAnimation == true ? (curFrame < 21 ? PlayAnimation(0) : 50) : (curFrame > 50 ? PlayAnimation(0) : 21)) : curFrame; break;
             case 2: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(3) : 19) : (curFrame > 19 ? PlayAnimation(3) : 2)) : curFrame; break;
             case 3: curFrame = 1; break;
             case 4: curFrame = curFrame < 2 || curFrame > 19 ? (invertAnimation == true ? (curFrame < 2 ? PlayAnimation(0) : 19) : (curFrame > 19 ? PlayAnimation(0) : 2)) : curFrame; break;
@@ -126,6 +132,10 @@ struct Penguin {
         else if (curAnimation == 10) return win[curFrame - 1];
         else return lose[curFrame - 1];
     }
+
+    void RenderPenguin(SDL_Rect *dstrct) {
+        SDL_RenderCopy(rend, CurrentFrame(), nullptr, dstrct);
+    }
 };
 
 struct Bubble {
@@ -134,25 +144,6 @@ struct Bubble {
     bool falling = false; // check if the bubble is on falling state, else snap
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
-};
-
-struct Shooter {
-    int bubbleToShow = 0;
-    bool miniShooter = false;
-    bool lowGfx = false;
-    SDL_Surface *shooterSfc;
-    SDL_Renderer *rend;
-    float angle = 0;
-
-    void Initialize(SDL_Renderer *renderer, const char *path) {
-        //if you haven't setted up the miniShooter and lowGfx variables before this, you may be screwed
-        shooterSfc = IMG_Load(path);
-        rend = renderer;
-    }
-
-    SDL_Texture *OutputTexture() {
-        return SDL_CreateTextureFromSurface(rend, shooterSfc);
-    };
 };
 
 struct SetupSettings {
@@ -171,20 +162,26 @@ public:
     void Render(void);
     void NewGame(SetupSettings setup);
     void HandleInput(SDL_Event *e);
+    void Update();
 private:
     const SDL_Renderer *renderer;
     SDL_Texture *background;
 
-    SDL_Surface *imgColorblindBubbles[BUBBLE_STYLES];
-    SDL_Surface *imgBubbles[BUBBLE_STYLES];
+    SDL_Texture *imgColorblindBubbles[BUBBLE_STYLES];
+    SDL_Texture *imgBubbles[BUBBLE_STYLES];
 
-    SDL_Surface *imgMiniColorblindBubbles[BUBBLE_STYLES];
-    SDL_Surface *imgMiniBubbles[BUBBLE_STYLES];
+    SDL_Texture *imgMiniColorblindBubbles[BUBBLE_STYLES];
+    SDL_Texture *imgMiniBubbles[BUBBLE_STYLES];
 
     Penguin penguinSprites[5];
     SDL_Texture *pausePenguin[35];
 
-    bool chainReaction;
+    SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture;
+    bool lowGfx = false;
+
+    float angle = M_PI/2;
+
+    bool chainReaction, shooterLeft = false, shooterRight = false, shooterCenter = false;
     int timeLeft = 0, dangerZone = 99;
 
     std::vector<Bubble> bubbleArrays[5]; //5 vectors wtih different players
