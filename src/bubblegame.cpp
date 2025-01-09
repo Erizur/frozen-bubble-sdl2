@@ -28,27 +28,43 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
 
 BubbleGame::~BubbleGame() {
     SDL_DestroyTexture(background);
+    for (int i = 0; i < BUBBLE_STYLES; i++)  {
+        SDL_DestroyTexture(imgBubbles[i]);
+        SDL_DestroyTexture(imgColorblindBubbles[i]);
+        SDL_DestroyTexture(imgMiniBubbles[i]);
+        SDL_DestroyTexture(imgMiniColorblindBubbles[i]);
+    }
 }
 
 void BubbleGame::NewGame(SetupSettings setup) {
-    AudioMixer *audMixer = AudioMixer::Instance();
+    audMixer = AudioMixer::Instance();
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
+    currentSettings = setup;
 
-    if (setup.playerCount == 1){
+    lowGfx = GameSettings::Instance()->gfxLevel() > 2 ? true : false;
+
+    if (currentSettings.playerCount == 1){
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
         penguinSprites[0].LoadPenguin(rend, (char*)"p1");
+        shooterSprites[0] = {lowGfx ? lowShooterTexture : shooterTexture, rend};
         audMixer->PlayMusic("main1p");
     }
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
-
-    lowGfx = GameSettings::Instance()->gfxLevel() > 2 ? true : false;
 }
 
-void BubbleGame::Update() {
+void BubbleGame::UpdatePenguin(int id) {
+    float &angle = shooterSprites[id].angle;
+
     shooterLeft = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT];
     shooterRight = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT];
     shooterCenter = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN];
+
+    if(shooterAction == true) {
+        if(penguinSprites[id].curAnimation != 1) penguinSprites[id].PlayAnimation(1);
+        shooterAction = false;
+        return;
+    }
 
     if (shooterLeft || shooterRight || shooterCenter) {
         if (angle < 0.1) angle = 0.1;
@@ -56,11 +72,11 @@ void BubbleGame::Update() {
 
         if (shooterLeft) {
             angle -= LAUNCHER_SPEED;
-            if(penguinSprites[0].curAnimation > 4 || penguinSprites[0].curAnimation < 2) penguinSprites[0].PlayAnimation(2);
+            if(penguinSprites[id].curAnimation != 1 && (penguinSprites[id].curAnimation > 7 || penguinSprites[id].curAnimation < 2)) penguinSprites[id].PlayAnimation(2);
         }
         else if (shooterRight) {
             angle += LAUNCHER_SPEED;
-            if(penguinSprites[0].curAnimation > 7 || penguinSprites[0].curAnimation < 5) penguinSprites[0].PlayAnimation(5);
+            if(penguinSprites[id].curAnimation != 1 && (penguinSprites[id].curAnimation > 7 || penguinSprites[id].curAnimation < 2)) penguinSprites[id].PlayAnimation(5);
         }
         else if (shooterCenter) {
             if (angle >= M_PI/2 - LAUNCHER_SPEED && angle <= M_PI/2 + LAUNCHER_SPEED) angle = M_PI/2;
@@ -68,18 +84,26 @@ void BubbleGame::Update() {
         }
     }
 
-    if (!shooterLeft && penguinSprites[0].curAnimation == 3) penguinSprites[0].PlayAnimation(4);
-    if (!shooterRight && penguinSprites[0].curAnimation == 6) penguinSprites[0].PlayAnimation(7);
+    if (!shooterLeft && penguinSprites[id].curAnimation == 3) penguinSprites[id].PlayAnimation(4);
+    if (!shooterRight && penguinSprites[id].curAnimation == 6) penguinSprites[id].PlayAnimation(7);
 }
 
 void BubbleGame::Render() {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
-
-    Update();
-
     SDL_RenderCopy(rend, background, nullptr, nullptr);
-    penguinSprites[0].RenderPenguin(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
-    SDL_RenderCopyEx(rend, shooterTexture, nullptr, new SDL_Rect{640/2 - 50, 480 - 123, 100, 100}, ((angle*100/(M_PI/2) + 0.5) - 100), NULL, SDL_FLIP_NONE);
+
+    if(currentSettings.playerCount == 1) {
+        UpdatePenguin(0);
+        penguinSprites[0].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
+        shooterSprites[0].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+    }
+    else { //iterate until all penguins are rendered
+        for (int i = 0; i < currentSettings.playerCount; i++) {
+            UpdatePenguin(i);
+            penguinSprites[i].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
+            shooterSprites[i].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+        }
+    }
 }
 
 void BubbleGame::HandleInput(SDL_Event *e) {
@@ -88,7 +112,7 @@ void BubbleGame::HandleInput(SDL_Event *e) {
             if(e->key.repeat) break;
             switch(e->key.keysym.sym) {
                 case SDLK_UP:
-                    if(penguinSprites[0].curAnimation != 1) penguinSprites[0].PlayAnimation(1);
+                    shooterAction = true;
                     break;
                 case SDLK_PAUSE:
                     while(1) {
@@ -105,11 +129,11 @@ void BubbleGame::HandleInput(SDL_Event *e) {
                     FrozenBubble::Instance()->CallGameQuit();
                     break;
                 case SDLK_F11: // mute / unpause audio
-                    if(AudioMixer::Instance()->IsHalted() == true) {
-                        AudioMixer::Instance()->MuteAll(true);
-                        AudioMixer::Instance()->PlayMusic("main1p");
+                    if(audMixer->IsHalted() == true) {
+                        audMixer->MuteAll(true);
+                        audMixer->PlayMusic("main1p");
                     }
-                    else AudioMixer::Instance()->MuteAll();
+                    else audMixer->MuteAll();
                     break;
             }
             break;

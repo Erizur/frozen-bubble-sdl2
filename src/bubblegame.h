@@ -133,7 +133,7 @@ struct Penguin {
         else return lose[curFrame - 1];
     }
 
-    void RenderPenguin(SDL_Rect *dstrct) {
+    void Render(SDL_Rect *dstrct) {
         SDL_RenderCopy(rend, CurrentFrame(), nullptr, dstrct);
     }
 };
@@ -144,6 +144,16 @@ struct Bubble {
     bool falling = false; // check if the bubble is on falling state, else snap
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
+};
+
+struct Shooter {
+    SDL_Texture *texture;
+    SDL_Renderer *renderer;
+    float angle = M_PI/2;
+
+    void Render(SDL_Rect *dstrct){
+        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*100/(M_PI/2) + 0.5) - 100), NULL, SDL_FLIP_NONE);
+    }
 };
 
 struct SetupSettings {
@@ -162,7 +172,7 @@ public:
     void Render(void);
     void NewGame(SetupSettings setup);
     void HandleInput(SDL_Event *e);
-    void Update();
+    void UpdatePenguin(int id);
 private:
     const SDL_Renderer *renderer;
     SDL_Texture *background;
@@ -177,12 +187,15 @@ private:
     SDL_Texture *pausePenguin[35];
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture;
+    Shooter shooterSprites[5];
+
     bool lowGfx = false;
 
-    float angle = M_PI/2;
-
-    bool chainReaction, shooterLeft = false, shooterRight = false, shooterCenter = false;
+    bool chainReaction, shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false;
     int timeLeft = 0, dangerZone = 99;
+
+    SetupSettings currentSettings;
+    AudioMixer *audMixer;
 
     std::vector<Bubble> bubbleArrays[5]; //5 vectors wtih different players
 };
