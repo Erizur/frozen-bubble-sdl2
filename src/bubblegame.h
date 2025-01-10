@@ -6,7 +6,10 @@
 #include <SDL2/SDL.h>
 #include "shaderstuff.h"
 
+#include <fstream>
+#include <sstream>
 #include <vector>
+#include <array>
 
 #pragma region "BubbleGame Defines"
 #define TIME_APPEARS_NEW_ROOT_MP 11
@@ -17,7 +20,7 @@
 #define TIME_HURRY_WARN 400
 #define TIME_HURRY_MAX 525
 
-// fyi fc stands for frame count not full combo, this isn't a rhythm game!!!!!!
+// frame count for animations
 #define PENGUIN_HANDLEFC 71
 #define PENGUIN_WAITFC 97
 #define PENGUIN_WINFC 68
@@ -140,10 +143,18 @@ struct Penguin {
 
 struct Bubble {
     int bubbleId; // id to use bubble image
-    SDL_Point pos; // current position
+    SDL_Point pos; // current position, top left aligned
+    bool playerBubble = false;
     bool falling = false; // check if the bubble is on falling state, else snap
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
+
+    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[]) {
+        if (bubbleId == -1) return;
+        SDL_Point size;
+        SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+    };
 };
 
 struct Shooter {
@@ -173,6 +184,9 @@ public:
     void NewGame(SetupSettings setup);
     void HandleInput(SDL_Event *e);
     void UpdatePenguin(int id);
+
+    void LoadLevelset(const char *path);
+    void LoadLevel(int id);
 private:
     const SDL_Renderer *renderer;
     SDL_Texture *background;
@@ -197,7 +211,8 @@ private:
     SetupSettings currentSettings;
     AudioMixer *audMixer;
 
-    std::vector<Bubble> bubbleArrays[5]; //5 vectors wtih different players
+    std::vector<std::array<std::vector<int>, 10>> loadedLevels;
+    std::array<std::vector<Bubble>, 13> bubbleArrays[5]; //5 vectors wtih different players
 };
 
 #endif // BUBBLEGAME_H

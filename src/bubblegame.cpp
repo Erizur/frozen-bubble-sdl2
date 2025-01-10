@@ -36,6 +36,81 @@ BubbleGame::~BubbleGame() {
     }
 }
 
+void BubbleGame::LoadLevelset(const char *path) {
+    std::ifstream lvlSet(path);
+    std::string curLine;
+
+    loadedLevels.clear();
+    if(lvlSet.is_open())
+    {
+        int idx = 0;
+        std::string curChar;
+        std::array<std::vector<int>, 10> level;
+        std::vector<int> line;
+        while(std::getline(lvlSet, curLine))
+        {
+            if (curLine.empty())
+            {
+                idx = 0;
+                loadedLevels.push_back(level);
+            }
+            else {
+                std::stringstream ss(curLine);
+                while(std::getline(ss, curChar, ' '))
+                {
+                    if(curChar.empty()) continue;
+                    else if(curChar == "-") line.push_back(-1);
+                    else {
+                        line.push_back(stoi(curChar));
+                    }
+                }
+            }
+
+            level[idx] = line;
+            line.clear();
+            idx++;
+        }
+    }
+    else {
+        SDL_LogError(1, "No such levelset (%s).", path);
+    }
+}
+
+// singleplayer function, you generate random arrays for multiplayer
+void BubbleGame::LoadLevel(int id){
+    SDL_Point txtSize;
+    SDL_QueryTexture(lowGfx ? imgMiniBubbles[0] : imgBubbles[0], NULL, NULL, &txtSize.x, &txtSize.y);
+
+    for (size_t i = 0; i < loadedLevels[id - 1].size(); i++)
+    {
+        for (int j = 0; j < loadedLevels[id - 1][i].size(); j++)
+        {
+            bubbleArrays[0][i].push_back(Bubble{loadedLevels[id - 1][i][j], {txtSize.x * (j + 1), txtSize.y * (j + 1)}});
+        }
+    }
+    if(bubbleArrays[0][9].size() == 8) {
+        for (int i = 0; i < 3; i++)
+        {
+            if(i % 2 == 0) {
+                for (int j = 0; i < 7; i++) bubbleArrays[0][10 + i].push_back({-1});
+            }
+            else {
+                for (int j = 0; i < 8; i++) bubbleArrays[0][10 + i].push_back({-1});
+            }
+        }
+    } else {
+        for (int i = 1; i < 4; i++)
+        {
+            if(i % 2 == 0) {
+                for (int j = 0; i < 8; i++) bubbleArrays[0][10 + i].push_back({-1});
+            }
+            else {
+                for (int j = 0; i < 7; i++) bubbleArrays[0][10 + i].push_back({-1});
+            }
+        }
+    }
+}
+
 void BubbleGame::NewGame(SetupSettings setup) {
     audMixer = AudioMixer::Instance();
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
@@ -50,7 +125,11 @@ void BubbleGame::NewGame(SetupSettings setup) {
         audMixer->PlayMusic("main1p");
     }
 
+    LoadLevelset(DATA_DIR "/data/levels");
+    LoadLevel(1);
+
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
+    FrozenBubble::Instance()->currentState = MainGame;
 }
 
 void BubbleGame::UpdatePenguin(int id) {
@@ -103,6 +182,11 @@ void BubbleGame::Render() {
             penguinSprites[i].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
             shooterSprites[i].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
         }
+    }
+
+    for (const std::vector<Bubble> vecBubble : bubbleArrays[0])
+    {
+        for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles);
     }
 }
 

@@ -412,6 +412,16 @@ void plasma_effect(SDL_Surface *s, SDL_Surface *img)
     }
 }
 
+void effect(SDL_Surface *s, SDL_Surface *img)
+{
+    int randvalue = rand_(8);
+    if (randvalue == 1 || randvalue == 2) store_effect(s, img);
+    else if (randvalue == 3 || randvalue == 4 || randvalue == 5) plasma_effect(s, img);
+    else if (randvalue == 6) circle_effect(s, img);
+    else if (randvalue == 7) bars_effect(s, img);
+    else squares_effect(s, img);
+}
+
 void shrink_(SDL_Surface *dest, SDL_Surface *orig, int xpos, int ypos, SDL_Rect *orig_rect, int factor)
 {
     int bpp = dest->format->BytesPerPixel;

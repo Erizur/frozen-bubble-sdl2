@@ -105,6 +105,8 @@ void plasma_init(char *datapath);
 
 void plasma_effect(SDL_Surface *s, SDL_Surface *img);
 
+void effect(SDL_Surface *s, SDL_Surface *img);
+
 void shrink_(SDL_Surface *dest, SDL_Surface *orig, int xpos, int ypos, SDL_Rect *orig_rect, int factor);
 
 void rotate_nearest_(SDL_Surface *dest, SDL_Surface *orig, double angle);
