@@ -8,7 +8,7 @@
 BubbleGame::BubbleGame(const SDL_Renderer *renderer) 
     : renderer(renderer)
 {
-    // We mostly just load images here. Everything should be setup in NewGame() instead.
+    // We mostly just load images here. Everything else should be setup in NewGame() instead.
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
 
     char path[256];
