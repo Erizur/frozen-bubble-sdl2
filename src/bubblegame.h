@@ -30,7 +30,11 @@
 #define TIMEOUT_PENGUIN_SLEEP 200
 
 #define BUBBLE_STYLES 8
+#define BUBBLE_STICKFC 7
 #define LAUNCHER_SPEED 0.015
+
+#define LAUNCHER_DIAMETER 50
+#define LAUNCHER_DIAMETER_MINI 25
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -144,16 +148,16 @@ struct Penguin {
 struct Bubble {
     int bubbleId; // id to use bubble image
     SDL_Point pos; // current position, top left aligned
-    bool playerBubble = false;
+    bool playerBubble = false; // if bubble was launched by player
     bool falling = false; // check if the bubble is on falling state, else snap
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
 
-    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[]) {
+    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[], SDL_Point *offset) {
         if (bubbleId == -1) return;
         SDL_Point size;
         SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x + offset->x, pos.y + offset->y, size.x, size.y});
     };
 };
 
@@ -197,10 +201,16 @@ private:
     SDL_Texture *imgMiniColorblindBubbles[BUBBLE_STYLES];
     SDL_Texture *imgMiniBubbles[BUBBLE_STYLES];
 
+    SDL_Texture *imgBubbleStick[BUBBLE_STICKFC];
+    SDL_Texture *imgMiniBubbleStick[BUBBLE_STICKFC];
+
+    SDL_Texture *imgBubbleFrozen;
+    SDL_Texture *imgMiniBubbleFrozen;
+
     Penguin penguinSprites[5];
     SDL_Texture *pausePenguin[35];
 
-    SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture;
+    SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture;
     Shooter shooterSprites[5];
 
     bool lowGfx = false;
@@ -213,6 +223,7 @@ private:
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
     std::array<std::vector<Bubble>, 13> bubbleArrays[5]; //5 vectors wtih different players
+    SDL_Point bubbleOffsets[5];
 };
 
 #endif // BUBBLEGAME_H

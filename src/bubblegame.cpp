@@ -2,28 +2,44 @@
 #include "bubblegame.h"
 #include "audiomixer.h"
 
+#include <algorithm>
+#include <iterator>
+
 BubbleGame::BubbleGame(const SDL_Renderer *renderer) 
     : renderer(renderer)
 {
-    // We mostly don't do anything here. Everything should be setup in NewGame() instead.
+    // We mostly just load images here. Everything should be setup in NewGame() instead.
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
 
     char path[256];
-    for (int i = 0; i < BUBBLE_STYLES; i++)
+    for (int i = 1; i <= BUBBLE_STYLES; i++)
     {
         sprintf(path, DATA_DIR "/gfx/balls/bubble-%d.gif", i);
-        imgBubbles[i] = IMG_LoadTexture(rend, path);
+        imgBubbles[i - 1] = IMG_LoadTexture(rend, path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-colourblind-%d.gif", i);
-        imgColorblindBubbles[i] = IMG_LoadTexture(rend, path);
+        imgColorblindBubbles[i - 1] = IMG_LoadTexture(rend, path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-%d-mini.png", i);
-        imgMiniBubbles[i] = IMG_LoadTexture(rend, path);
+        imgMiniBubbles[i - 1] = IMG_LoadTexture(rend, path);
         sprintf(path, DATA_DIR "/gfx/balls/bubble-colourblind-%d-mini.png", i);
-        imgMiniColorblindBubbles[i] = IMG_LoadTexture(rend, path);
+        imgMiniColorblindBubbles[i - 1] = IMG_LoadTexture(rend, path);
     }
+
+    for (int i = 0; i <= BUBBLE_STICKFC; i++) {
+        sprintf(path, DATA_DIR "/gfx/balls/stick_effect_%d.png", i);
+        imgBubbleStick[i] = IMG_LoadTexture(rend, path);
+        sprintf(path, DATA_DIR "/gfx/balls/stick_effect_%d-mini.png", i);
+        imgMiniBubbleStick[i] = IMG_LoadTexture(rend, path);
+    }
+
+    imgBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose.png");
+    imgMiniBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose-mini.png");
 
     shooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter.png");
     miniShooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter-mini.png");
     lowShooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter-lowgfx.png");
+    
+    compressorTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/compressor_main.png");
+    sepCompressorTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/compressor_ext.png");
 }
 
 BubbleGame::~BubbleGame() {
@@ -64,11 +80,11 @@ void BubbleGame::LoadLevelset(const char *path) {
                         line.push_back(stoi(curChar));
                     }
                 }
-            }
 
-            level[idx] = line;
-            line.clear();
-            idx++;
+                level[idx] = line;
+                line.clear();
+                idx++;
+            }
         }
     }
     else {
@@ -78,35 +94,29 @@ void BubbleGame::LoadLevelset(const char *path) {
 
 // singleplayer function, you generate random arrays for multiplayer
 void BubbleGame::LoadLevel(int id){
-    SDL_Point txtSize;
-    SDL_QueryTexture(lowGfx ? imgMiniBubbles[0] : imgBubbles[0], NULL, NULL, &txtSize.x, &txtSize.y);
+    std::array<std::vector<int>, 10> level = loadedLevels[id - 1];
+    int bubbleSize = 32;
+    int initBubbleY = (int)(bubbleSize / 1.15);
 
-    for (size_t i = 0; i < loadedLevels[id - 1].size(); i++)
+    for (size_t i = 0; i < level.size(); i++)
     {
-        for (int j = 0; j < loadedLevels[id - 1][i].size(); j++)
+        int smallerSep = level[i].size() % 2 == 0 ? 0 : bubbleSize / 2;
+        for (size_t j = 0; j < level[i].size(); j++)
         {
-            bubbleArrays[0][i].push_back(Bubble{loadedLevels[id - 1][i][j], {txtSize.x * (j + 1), txtSize.y * (j + 1)}});
+            bubbleArrays[0][i].push_back(Bubble{level[i][j], {smallerSep + bubbleSize * ((int)j), initBubbleY * ((int)i)}});
         }
     }
-    if(bubbleArrays[0][9].size() == 8) {
+    if(bubbleArrays[0][9].size() % 2 == 0) {
         for (int i = 0; i < 3; i++)
         {
-            if(i % 2 == 0) {
-                for (int j = 0; i < 7; i++) bubbleArrays[0][10 + i].push_back({-1});
-            }
-            else {
-                for (int j = 0; i < 8; i++) bubbleArrays[0][10 + i].push_back({-1});
-            }
+            int smallerSep = i % 2 == 0 ? 0 : bubbleSize / 2;
+            for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) bubbleArrays[0][10 + i].push_back({-1, {smallerSep + bubbleSize * j, initBubbleY * (10 + i)}});
         }
     } else {
         for (int i = 1; i < 4; i++)
         {
-            if(i % 2 == 0) {
-                for (int j = 0; i < 8; i++) bubbleArrays[0][10 + i].push_back({-1});
-            }
-            else {
-                for (int j = 0; i < 7; i++) bubbleArrays[0][10 + i].push_back({-1});
-            }
+            int smallerSep = i % 2 == 0 ? 0 : bubbleSize / 2;
+            for (int j = 0; j < (i % 2 == 0 ? 8 : 7); j++) bubbleArrays[0][10 + (i - 1)].push_back({-1, {smallerSep + bubbleSize * j, initBubbleY * (10 + i)}});
         }
     }
 }
@@ -122,6 +132,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
         penguinSprites[0].LoadPenguin(rend, (char*)"p1");
         shooterSprites[0] = {lowGfx ? lowShooterTexture : shooterTexture, rend};
+        bubbleOffsets[0] = {190, 51};
         audMixer->PlayMusic("main1p");
     }
 
@@ -150,11 +161,11 @@ void BubbleGame::UpdatePenguin(int id) {
         if (angle > M_PI-0.1) angle = M_PI-0.1;
 
         if (shooterLeft) {
-            angle -= LAUNCHER_SPEED;
+            angle += lowGfx ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
             if(penguinSprites[id].curAnimation != 1 && (penguinSprites[id].curAnimation > 7 || penguinSprites[id].curAnimation < 2)) penguinSprites[id].PlayAnimation(2);
         }
         else if (shooterRight) {
-            angle += LAUNCHER_SPEED;
+            angle -= lowGfx ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
             if(penguinSprites[id].curAnimation != 1 && (penguinSprites[id].curAnimation > 7 || penguinSprites[id].curAnimation < 2)) penguinSprites[id].PlayAnimation(5);
         }
         else if (shooterCenter) {
@@ -170,23 +181,33 @@ void BubbleGame::UpdatePenguin(int id) {
 void BubbleGame::Render() {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
     SDL_RenderCopy(rend, background, nullptr, nullptr);
-
+    
     if(currentSettings.playerCount == 1) {
         UpdatePenguin(0);
-        penguinSprites[0].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
-        shooterSprites[0].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+        if(!lowGfx) {
+            penguinSprites[0].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
+            shooterSprites[0].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+        } else {
+            SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(shooterSprites[0].angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(shooterSprites[0].angle))), 4, 4});
+        }
+        
+        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5, 252, 56});
     }
     else { //iterate until all penguins are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {
             UpdatePenguin(i);
-            penguinSprites[i].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
-            shooterSprites[i].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+            if(!lowGfx) {
+                penguinSprites[0].Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
+                shooterSprites[0].Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+            } else {
+                SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(shooterSprites[i].angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(shooterSprites[i].angle))), 4, 4});
+            }
         }
     }
 
-    for (const std::vector<Bubble> vecBubble : bubbleArrays[0])
+    for (const std::vector<Bubble> &vecBubble : bubbleArrays[0])
     {
-        for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles);
+        for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, &bubbleOffsets[0]);
     }
 }
 
