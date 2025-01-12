@@ -178,6 +178,14 @@ void BubbleGame::UpdatePenguin(int id) {
     if (!shooterRight && penguinSprites[id].curAnimation == 6) penguinSprites[id].PlayAnimation(7);
 }
 
+void BubbleGame::ChooseFirstBubble(int id) {
+    
+}
+
+void BubbleGame::PickNextBubble(int id) {
+
+}
+
 void BubbleGame::Render() {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
     SDL_RenderCopy(rend, background, nullptr, nullptr);

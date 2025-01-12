@@ -218,12 +218,17 @@ private:
     bool chainReaction, shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false;
     int timeLeft = 0, dangerZone = 99;
 
+    int nextBubble[5], curLaunch[5];
+
     SetupSettings currentSettings;
     AudioMixer *audMixer;
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
     std::array<std::vector<Bubble>, 13> bubbleArrays[5]; //5 vectors wtih different players
     SDL_Point bubbleOffsets[5];
+
+    void ChooseFirstBubble(int id);
+    void PickNextBubble(int id);
 };
 
 #endif // BUBBLEGAME_H
