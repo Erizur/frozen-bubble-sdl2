@@ -178,8 +178,9 @@ void BubbleGame::UpdatePenguin(int id) {
     if (!shooterRight && penguinSprites[id].curAnimation == 6) penguinSprites[id].PlayAnimation(7);
 }
 
+// only called for a new game.
 void BubbleGame::ChooseFirstBubble(int id) {
-    
+    curLaunch[id] = 0;
 }
 
 void BubbleGame::PickNextBubble(int id) {

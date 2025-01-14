@@ -177,6 +177,11 @@ struct SetupSettings {
     bool networkGame = false;
 };
 
+struct BubbleArray {
+    std::array<std::vector<Bubble>, 13> bubbleMap;
+    Penguin penguinSprite;
+};
+
 class BubbleGame final
 {
 public:
@@ -207,7 +212,6 @@ private:
     SDL_Texture *imgBubbleFrozen;
     SDL_Texture *imgMiniBubbleFrozen;
 
-    Penguin penguinSprites[5];
     SDL_Texture *pausePenguin[35];
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture;
@@ -224,7 +228,7 @@ private:
     AudioMixer *audMixer;
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
-    std::array<std::vector<Bubble>, 13> bubbleArrays[5]; //5 vectors wtih different players
+    BubbleArray bubbleArrays[5]; //5 custom arrays wtih different players
     SDL_Point bubbleOffsets[5];
 
     void ChooseFirstBubble(int id);
