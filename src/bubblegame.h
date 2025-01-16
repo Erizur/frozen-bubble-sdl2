@@ -10,6 +10,7 @@
 #include <sstream>
 #include <vector>
 #include <array>
+#include <algorithm>
 
 #pragma region "BubbleGame Defines"
 #define TIME_APPEARS_NEW_ROOT_MP 11
@@ -27,7 +28,7 @@
 #define PENGUIN_LOSEFC 158
 
 #define PENGUIN_FRAMEWAIT 1
-#define TIMEOUT_PENGUIN_SLEEP 200
+#define TIMEOUT_PENGUIN_SLEEP 200 * 2
 
 #define BUBBLE_STYLES 8
 #define BUBBLE_STICKFC 7
@@ -45,6 +46,7 @@ struct Penguin {
     SDL_Texture* lose[PENGUIN_LOSEFC];
     // curAnimation up to 13 values
     int curAnimation = 0, curFrame = 1, waitFrame = 0;
+    int sleeping = 0;
     bool invertAnimation = false;
     SDL_Renderer *rend;
 
@@ -179,7 +181,22 @@ struct SetupSettings {
 
 struct BubbleArray {
     std::array<std::vector<Bubble>, 13> bubbleMap;
+    SDL_Point bubbleOffset;
     Penguin penguinSprite;
+    Shooter shooterSprite;
+    int nextBubble, curLaunch;
+    bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false;
+
+    std::vector<int> remainingBubbles() {
+        std::vector<int> a;
+        for (int i = 0; i < 13; i++) {
+            for (const Bubble &bubble : bubbleMap[i]) {
+                if (bubble.bubbleId != -1 && std::count(a.begin(), a.end(), bubble.bubbleId) == 0) a.push_back(bubble.bubbleId); 
+            }
+        }
+
+        return a;
+    }
 };
 
 class BubbleGame final
@@ -192,7 +209,7 @@ public:
     void Render(void);
     void NewGame(SetupSettings setup);
     void HandleInput(SDL_Event *e);
-    void UpdatePenguin(int id);
+    void UpdatePenguin(BubbleArray &bArray);
 
     void LoadLevelset(const char *path);
     void LoadLevel(int id);
@@ -214,25 +231,21 @@ private:
 
     SDL_Texture *pausePenguin[35];
 
-    SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture;
-    Shooter shooterSprites[5];
+    SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture, *onTopTexture, *miniOnTopTexture;
 
     bool lowGfx = false;
 
-    bool chainReaction, shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false;
+    bool chainReaction;
     int timeLeft = 0, dangerZone = 99;
-
-    int nextBubble[5], curLaunch[5];
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
     BubbleArray bubbleArrays[5]; //5 custom arrays wtih different players
-    SDL_Point bubbleOffsets[5];
 
-    void ChooseFirstBubble(int id);
-    void PickNextBubble(int id);
+    void ChooseFirstBubble(BubbleArray &bArray);
+    void PickNextBubble(BubbleArray &bArray);
 };
 
 #endif // BUBBLEGAME_H
