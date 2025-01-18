@@ -156,11 +156,20 @@ struct Bubble {
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
 
-    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[]) {
+    void RenderFrozen(SDL_Renderer *rend, SDL_Texture *frozen) {
+        if (bubbleId == -1) return;
+        SDL_Point size;
+        SDL_QueryTexture(frozen, NULL, NULL, &size.x, &size.y);
+        SDL_RenderCopy(rend, frozen, nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+    }
+
+    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[], SDL_Texture *shinyTexture, SDL_Texture *frozenTexture) {
         if (bubbleId == -1) return;
         SDL_Point size;
         SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        if (!frozen) SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        else RenderFrozen(rend, frozenTexture);
+        if(shining) SDL_RenderCopy(rend, shinyTexture, nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
     };
 };
 
@@ -233,8 +242,8 @@ private:
     SDL_Texture *imgBubbleStick[BUBBLE_STICKFC];
     SDL_Texture *imgMiniBubbleStick[BUBBLE_STICKFC];
 
-    SDL_Texture *imgBubbleFrozen;
-    SDL_Texture *imgMiniBubbleFrozen;
+    SDL_Texture *imgBubbleFrozen, *imgMiniBubbleFrozen;
+    SDL_Texture *imgBubblePrelight, *imgMiniBubblePrelight;
 
     SDL_Texture *pausePenguin[35];
 

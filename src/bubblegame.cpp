@@ -91,6 +91,9 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
     imgBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose.png");
     imgMiniBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose-mini.png");
 
+    imgBubblePrelight = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_prelight.png");
+    imgMiniBubblePrelight = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_prelight-mini.png");
+
     shooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter.png");
     miniShooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter-mini.png");
     lowShooterTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/shooter-lowgfx.png");
@@ -323,7 +326,7 @@ void BubbleGame::Render() {
         BubbleArray &curArray = bubbleArrays[0];
 
         UpdateSingleBubbles(0);
-        for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles);
+        for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight);
         for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
 
         SDL_RenderCopy(rend, imgBubbles[curArray.curLaunch], nullptr, new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
