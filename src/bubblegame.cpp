@@ -16,7 +16,7 @@ struct SingleBubble {
     float direction; // angle
     bool falling = false; // is falling from the top
     bool launching = false; // is launched from shooter
-    int leftLimit, rightLimit; // limit before bouncing
+    int leftLimit, rightLimit, topLimit; // limit before bouncing
     int bubbleSize = 32; // bubble size (change when creating for small variants)
 
     void CopyBubbleProperties(Bubble *prop) {
@@ -26,6 +26,7 @@ struct SingleBubble {
 
     bool IsCollision(Bubble *bubble) {
         if (bubble->bubbleId == -1) return false;
+        if (pos.y < topLimit) return true; // end if out of bounds ontop
         double distanceCollision = pow(bubbleSize * 0.82, 2);
         double xs = pow(bubble->pos.x - pos.x, 2);
         if (xs > distanceCollision) return false;
@@ -197,6 +198,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].bubbleOffset = {190, 51};
         bubbleArrays[0].leftLimit = (640 / 2) - 128;
         bubbleArrays[0].rightLimit = (640 / 2) + 128;
+        bubbleArrays[0].topLimit = 51;
         audMixer->PlayMusic("main1p");
     }
 
@@ -211,7 +213,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
 
 void BubbleGame::LaunchBubble(BubbleArray &bArray) {
     audMixer->PlaySFX("launch");
-    singleBubbles.push_back({0, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit});
+    singleBubbles.push_back({0, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit});
     PickNextBubble(bArray);
 }
 
@@ -335,8 +337,6 @@ void BubbleGame::Render() {
         } else {
             SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle))), 4, 4});
         }
-
-        
         
         SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5, 252, 56});
     }

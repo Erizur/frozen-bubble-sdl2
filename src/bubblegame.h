@@ -185,7 +185,7 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int nextBubble, curLaunch, leftLimit, rightLimit;
+    int nextBubble, curLaunch, leftLimit, rightLimit, topLimit;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
     std::vector<int> remainingBubbles() {
