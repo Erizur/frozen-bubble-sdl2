@@ -32,6 +32,8 @@
 
 #define BUBBLE_STYLES 8
 #define BUBBLE_STICKFC 7
+#define BUBBLE_SPEED 10 / 2
+#define MALUS_BUBBLE_SPEED 30 / 2
 #define LAUNCHER_SPEED 0.015
 
 #define LAUNCHER_DIAMETER 50
@@ -151,15 +153,14 @@ struct Bubble {
     int bubbleId; // id to use bubble image
     SDL_Point pos; // current position, top left aligned
     bool playerBubble = false; // if bubble was launched by player
-    bool falling = false; // check if the bubble is on falling state, else snap
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
 
-    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[], SDL_Point *offset) {
+    void Render(SDL_Renderer *rend, SDL_Texture *bubbles[]) {
         if (bubbleId == -1) return;
         SDL_Point size;
         SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x + offset->x, pos.y + offset->y, size.x, size.y});
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
     };
 };
 
@@ -184,8 +185,8 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int nextBubble, curLaunch;
-    bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false;
+    int nextBubble, curLaunch, leftLimit, rightLimit;
+    bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
     std::vector<int> remainingBubbles() {
         std::vector<int> a;
@@ -196,6 +197,12 @@ struct BubbleArray {
         }
 
         return a;
+    }
+
+    void PlacePlayerBubble(int bubbleId, int row, int col) {
+        Bubble &bubble = bubbleMap[row][col];
+        bubble.bubbleId = bubbleId;
+        bubble.playerBubble = true;
     }
 };
 
@@ -236,7 +243,7 @@ private:
     bool lowGfx = false;
 
     bool chainReaction;
-    int timeLeft = 0, dangerZone = 99;
+    int timeLeft = 0, dangerZone = 13;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
@@ -246,6 +253,8 @@ private:
 
     void ChooseFirstBubble(BubbleArray &bArray);
     void PickNextBubble(BubbleArray &bArray);
+    void LaunchBubble(BubbleArray &bArray);
+    void UpdateSingleBubbles(int id);
 };
 
 #endif // BUBBLEGAME_H
