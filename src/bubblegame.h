@@ -1,7 +1,7 @@
 #ifndef BUBBLEGAME_H
 #define BUBBLEGAME_H
 
-#define M_PI 3.14159265358979323846
+#define M_PI 3.1415926535897932384626433832795028841972
 
 #include <SDL2/SDL.h>
 #include "shaderstuff.h"
@@ -208,6 +208,16 @@ struct BubbleArray {
         return a;
     }
 
+    bool allClear() {
+        for (int i = 0; i < 13; i++) {
+            for (const Bubble &bubble : bubbleMap[i]) {
+                if (bubble.bubbleId != -1) return false; 
+            }
+        }
+
+        return true;
+    }
+
     void PlacePlayerBubble(int bubbleId, int row, int col) {
         Bubble &bubble = bubbleMap[row][col];
         bubble.bubbleId = bubbleId;
@@ -249,7 +259,7 @@ private:
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture, *onTopTexture, *miniOnTopTexture;
 
-    bool lowGfx = false;
+    bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false;
 
     bool chainReaction;
     int timeLeft = 0, dangerZone = 13;
@@ -264,6 +274,10 @@ private:
     void PickNextBubble(BubbleArray &bArray);
     void LaunchBubble(BubbleArray &bArray);
     void UpdateSingleBubbles(int id);
+
+    void CheckPossibleDestroy(BubbleArray &bArray);
+    void CheckAirBubbles(BubbleArray &bArray);
+    void CheckGameState(BubbleArray &bArray);
 };
 
 #endif // BUBBLEGAME_H

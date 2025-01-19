@@ -221,6 +221,8 @@ void BubbleGame::LaunchBubble(BubbleArray &bArray) {
 }
 
 void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
+    if (gameFinish) return;
+
     float &angle = bArray.shooterSprite.angle;
     Penguin &penguin = bArray.penguinSprite;
 
@@ -302,8 +304,9 @@ void BubbleGame::UpdateSingleBubbles(int id) {
     BubbleArray *bArray = &bubbleArrays[id];
     for (size_t i = 0; i < singleBubbles.size(); i++) {
         SingleBubble &sBubble = singleBubbles[i];
-        if (sBubble.assignedArray != id || sBubble.falling == true) continue; // if not from current array, ignore!
+        if (sBubble.assignedArray != id) continue; // if not from current array, ignore!
         sBubble.UpdatePosition();
+        if (sBubble.launching != true) continue; // if not being launched, ignore collision!
         for (const std::vector<Bubble> &vecBubble : bArray->bubbleMap) for (Bubble bubble : vecBubble) {
             if (sBubble.IsCollision(&bubble)) {
                 int row, col;
@@ -312,9 +315,97 @@ void BubbleGame::UpdateSingleBubbles(int id) {
                 bArray->newShoot = true;
                 audMixer->PlaySFX("stick");
                 singleBubbles.erase(singleBubbles.begin() + i);
+                CheckPossibleDestroy(*bArray);
+                CheckGameState(*bArray);
                 return;
             }
         };
+    }
+}
+
+bool IsTileNotGrouped(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int row, int col) {
+    bool validRow = (((size_t)row <= bArray.bubbleMap.size() - 1) && row >= 0) ? true : false;
+    if (validRow == false) return false;
+    bool validCol = (((size_t)col <= bArray.bubbleMap[row].size() - 1) && col >= 0) ? true : false;
+    if (validCol == false) return false;
+
+    if (std::count((*bubbleCount).begin(), (*bubbleCount).end(), &bArray.bubbleMap[row][col]) > 0) return false;
+    if (bArray.bubbleMap[row][col].bubbleId != (*bubbleCount)[0]->bubbleId) return false; // if it doesnt match what were looking for, ignore!
+    return true;
+}
+
+void GetGroupedCount(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int row, int col, int *curStack) {
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+        for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+            if (i == (size_t)row && j == (size_t)col) { //we are where we left from.
+                for (int k = -1; k < 2; k++) {
+                    for (int l = -1; l < 2; l++) {
+                        if (IsTileNotGrouped(bArray, bubbleCount, i + k, j + l)) {
+                            (*bubbleCount).push_back(&bArray.bubbleMap[i][j]);
+                            *curStack += 1;
+                            GetGroupedCount(bArray, bubbleCount, i + k, j + l, curStack);
+                        }
+                    }
+                }
+            }
+            else continue;
+        }
+    }
+}
+
+void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+        for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+            if (bArray.bubbleMap[i][j].playerBubble == true) { // activator
+                std::vector<Bubble*> bubbleCount;
+                int groupedCount = 0;
+                bubbleCount.push_back(&bArray.bubbleMap[i][j]);
+                GetGroupedCount(bArray, &bubbleCount, i, j, &groupedCount);
+                if (groupedCount >= 3) {
+                    audMixer->PlaySFX("destroy_group");
+                    for (Bubble *bubble : bubbleCount) {
+                        bubble->bubbleId = -1;
+                        bubble->playerBubble = false;
+                    }
+                }
+                continue;
+            }
+        }
+    }
+    CheckAirBubbles(bArray);
+}
+
+void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+        for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+            if (bArray.bubbleMap[i][j].bubbleId == -1) continue; //just skip
+            if (i > 0) { //not the top row
+                bool attached = false;
+                bool biggerThan = (bArray.bubbleMap[i].size() > bArray.bubbleMap[i - 1].size()) ? true : false;
+                if(biggerThan) {
+                    if (j != 0) { if (bArray.bubbleMap[i-1][j-1].bubbleId != -1) attached = true; }
+                    if (j < bArray.bubbleMap[i].size() - 1) { if (bArray.bubbleMap[i-1][j].bubbleId != -1) attached = true; }
+                }
+                else {
+                    if (bArray.bubbleMap[i-1][j].bubbleId != -1) attached = true;
+                    if (bArray.bubbleMap[i-1][j+1].bubbleId != -1) attached = true;
+                }
+                if (attached == false) {
+                    bArray.bubbleMap[i][j].bubbleId = -1;
+                    bArray.bubbleMap[i][j].playerBubble = false;
+                    continue;
+                }
+            }
+            else continue;
+        }
+    }
+}
+
+void BubbleGame::CheckGameState(BubbleArray &bArray) {
+    if (bArray.allClear()) {
+        gameFinish = true;
+        gameWon = true;
+        bArray.penguinSprite.PlayAnimation(10);
     }
 }
 
@@ -326,7 +417,7 @@ void BubbleGame::Render() {
         BubbleArray &curArray = bubbleArrays[0];
 
         UpdateSingleBubbles(0);
-        for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight);
+        for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
         for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
 
         SDL_RenderCopy(rend, imgBubbles[curArray.curLaunch], nullptr, new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
@@ -364,7 +455,7 @@ void BubbleGame::HandleInput(SDL_Event *e) {
             if(e->key.repeat) break;
             switch(e->key.keysym.sym) {
                 case SDLK_UP:
-                    bubbleArrays[0].shooterAction = true;
+                    if (gameFinish == false) bubbleArrays[0].shooterAction = true;
                     break;
                 case SDLK_PAUSE:
                     while(1) {
