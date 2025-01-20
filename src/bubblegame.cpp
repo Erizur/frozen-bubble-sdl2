@@ -375,21 +375,38 @@ void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){
     CheckAirBubbles(bArray);
 }
 
+bool isAttached(BubbleArray &bArray, int row, int col) {
+    bool biggerThan = (bArray.bubbleMap[row].size() > bArray.bubbleMap[row - 1].size()) ? true : false;
+    if(biggerThan) {
+        if (col > 0) { if (bArray.bubbleMap[row-1][col-1].bubbleId != -1) return true; }
+        if ((size_t)col < bArray.bubbleMap[row].size() - 1) { if (bArray.bubbleMap[row-1][col].bubbleId != -1) return true; }
+    }
+    else {
+        if (bArray.bubbleMap[row-1][col].bubbleId != -1) return true;
+        if (bArray.bubbleMap[row-1][col+1].bubbleId != -1) return true;
+    }
+    return false;
+}
+
+void CheckIfAttached(BubbleArray &bArray, int row, int col, int fc, bool *attached) {
+    *attached = isAttached(bArray, row, col);
+    if (*attached != true && bArray.bubbleMap[row][col].bubbleId != -1) { //if atp attached is still false, try the others!
+        if (col > 0) {
+            if (col-1 != fc && bArray.bubbleMap[row][col - 1].bubbleId != -1) CheckIfAttached(bArray, row, col - 1, col, attached);
+        }
+        if (*attached != true && (size_t)col < bArray.bubbleMap[row].size() - 1) {
+            if (col+1 != fc && bArray.bubbleMap[row][col + 1].bubbleId != -1) CheckIfAttached(bArray, row, col + 1, col, attached);
+        }
+    }
+}
+
 void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
     for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
         for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
             if (bArray.bubbleMap[i][j].bubbleId == -1) continue; //just skip
             if (i > 0) { //not the top row
                 bool attached = false;
-                bool biggerThan = (bArray.bubbleMap[i].size() > bArray.bubbleMap[i - 1].size()) ? true : false;
-                if(biggerThan) {
-                    if (j != 0) { if (bArray.bubbleMap[i-1][j-1].bubbleId != -1) attached = true; }
-                    if (j < bArray.bubbleMap[i].size() - 1) { if (bArray.bubbleMap[i-1][j].bubbleId != -1) attached = true; }
-                }
-                else {
-                    if (bArray.bubbleMap[i-1][j].bubbleId != -1) attached = true;
-                    if (bArray.bubbleMap[i-1][j+1].bubbleId != -1) attached = true;
-                }
+                CheckIfAttached(bArray, i, j, 99, &attached);
                 if (attached == false) {
                     bArray.bubbleMap[i][j].bubbleId = -1;
                     bArray.bubbleMap[i][j].playerBubble = false;
