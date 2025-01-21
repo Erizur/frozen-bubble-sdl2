@@ -103,6 +103,9 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
 
     onTopTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/on_top_next.png");
     miniOnTopTexture = IMG_LoadTexture(rend, DATA_DIR "/gfx/on_top_next-mini.png");
+
+    dotTexture[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/dot_green.png");
+    dotTexture[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/dot_red.png");
 }
 
 BubbleGame::~BubbleGame() {
@@ -202,11 +205,12 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].leftLimit = (640 / 2) - 128;
         bubbleArrays[0].rightLimit = (640 / 2) + 128;
         bubbleArrays[0].topLimit = 51;
+        bubbleArrays[0].numSeparators = 0;
         audMixer->PlayMusic("main1p");
     }
 
     LoadLevelset(DATA_DIR "/data/levels");
-    LoadLevel(3);
+    LoadLevel(10);
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
@@ -341,7 +345,7 @@ void GetGroupedCount(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int
                 for (int k = -1; k < 2; k++) {
                     for (int l = -1; l < 2; l++) {
                         if(k != 0){
-                            if(i > 0 && (k > 0 && (size_t)i >= bArray.bubbleMap.size() - 1) == false) {
+                            if((i > 0 && (k > 0 && (size_t)i >= bArray.bubbleMap.size() - 1) == false) || (i == 0 && k > 0)) {
                                 if(bArray.bubbleMap[i].size() > bArray.bubbleMap[i + k].size()){ if (l > 0) continue; }
                                 else { if (l < 0) continue; }
                             }
@@ -425,10 +429,23 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
 }
 
 void BubbleGame::CheckGameState(BubbleArray &bArray) {
+    bArray.turnsToCompress--;
+    if (bArray.turnsToCompress == 0) {
+        bArray.turnsToCompress = 9;
+        bArray.dangerZone--;
+        bArray.numSeparators++;
+        bArray.ExpandOffset(0, 28);
+        audMixer->PlaySFX("newroot_solo");
+    }
     if (bArray.allClear()) {
         gameFinish = true;
         gameWon = true;
         bArray.penguinSprite.PlayAnimation(10);
+    }
+    if (bArray.bubbleOnDanger()) {
+        gameFinish = true;
+        audMixer->PlaySFX("lose");
+        bArray.penguinSprite.PlayAnimation(11);
     }
 }
 
@@ -454,8 +471,10 @@ void BubbleGame::Render() {
         } else {
             SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle))), 4, 4});
         }
-        
-        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5, 252, 56});
+
+        for (int i = 1; i < 10; i++) SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, new SDL_Rect{curArray.rightLimit, 104 - (7 * i) - i, 7, 7});
+        for (int i = 0; i < curArray.numSeparators; i++) SDL_RenderCopy(rend, sepCompressorTexture, nullptr, new SDL_Rect{(640/2) - 95, (28 * i), 188, 28});
+        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5 + (28 * curArray.numSeparators), 252, 56});
     }
     else { //iterate until all penguins are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {

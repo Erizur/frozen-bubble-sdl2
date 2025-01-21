@@ -34,10 +34,12 @@
 #define BUBBLE_STICKFC 7
 #define BUBBLE_SPEED 10 / 2
 #define MALUS_BUBBLE_SPEED 30 / 2
-#define LAUNCHER_SPEED 0.015 / 1.15
+#define LAUNCHER_SPEED 0.015 / 1.2
 
 #define LAUNCHER_DIAMETER 50
 #define LAUNCHER_DIAMETER_MINI 25
+
+#define COMPRESSOR_OFFSET 28
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -194,7 +196,7 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int nextBubble, curLaunch, leftLimit, rightLimit, topLimit;
+    int nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
     std::vector<int> remainingBubbles() {
@@ -216,6 +218,31 @@ struct BubbleArray {
         }
 
         return true;
+    }
+    
+    bool bubbleOnDanger() {
+        for (int i = 0; i < 13; i++) {
+            for (const Bubble &bubble : bubbleMap[i]) {
+                if (i >= dangerZone && bubble.bubbleId != -1) return true; 
+            }
+        }
+
+        return false;
+    }
+
+    void ExpandOffset(int ex, int ey) {
+        bubbleOffset.x += ex;
+        bubbleOffset.y += ey;
+        topLimit += ey;
+        leftLimit += ex;
+        rightLimit += ex;
+
+        for (int i = 0; i < 13; i++) {
+            for (Bubble &bubble : bubbleMap[i]) {
+                bubble.pos.x += ex;
+                bubble.pos.y += ey;
+            }
+        }
     }
 
     void PlacePlayerBubble(int bubbleId, int row, int col) {
@@ -256,13 +283,14 @@ private:
     SDL_Texture *imgBubblePrelight, *imgMiniBubblePrelight;
 
     SDL_Texture *pausePenguin[35];
+    SDL_Texture *dotTexture[2];
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture, *onTopTexture, *miniOnTopTexture;
 
     bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false;
 
     bool chainReaction;
-    int timeLeft = 0, dangerZone = 13;
+    int timeLeft = 0, dangerZone = 12;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
