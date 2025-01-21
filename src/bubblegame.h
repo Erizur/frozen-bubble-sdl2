@@ -34,7 +34,7 @@
 #define BUBBLE_STICKFC 7
 #define BUBBLE_SPEED 10 / 2
 #define MALUS_BUBBLE_SPEED 30 / 2
-#define LAUNCHER_SPEED 0.015 / 0.8
+#define LAUNCHER_SPEED 0.015 / 1.15
 
 #define LAUNCHER_DIAMETER 50
 #define LAUNCHER_DIAMETER_MINI 25
@@ -155,7 +155,6 @@ struct Bubble {
     bool playerBubble = false; // if bubble was launched by player
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
-    bool scannedAir = false; // mainly used for air condition checks
 
     void RenderFrozen(SDL_Renderer *rend, SDL_Texture *frozen) {
         if (bubbleId == -1) return;
@@ -217,12 +216,6 @@ struct BubbleArray {
         }
 
         return true;
-    }
-
-    void ClearAirCondition() {
-        for (int i = 0; i < 13; i++) {
-            for (Bubble &bubble : bubbleMap[i]) bubble.scannedAir = false;
-        }
     }
 
     void PlacePlayerBubble(int bubbleId, int row, int col) {

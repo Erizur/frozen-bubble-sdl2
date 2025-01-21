@@ -206,7 +206,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
     }
 
     LoadLevelset(DATA_DIR "/data/levels");
-    LoadLevel(1);
+    LoadLevel(3);
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
@@ -340,6 +340,12 @@ void GetGroupedCount(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int
             if (i == (size_t)row && j == (size_t)col) { //we are where we left from.
                 for (int k = -1; k < 2; k++) {
                     for (int l = -1; l < 2; l++) {
+                        if(k != 0){
+                            if(i > 0 && (k > 0 && (size_t)i >= bArray.bubbleMap.size() - 1) == false) {
+                                if(bArray.bubbleMap[i].size() > bArray.bubbleMap[i + k].size()){ if (l > 0) continue; }
+                                else { if (l < 0) continue; }
+                            }
+                        }
                         if (IsTileNotGrouped(bArray, bubbleCount, i + k, j + l)) {
                             (*bubbleCount).push_back(&bArray.bubbleMap[i][j]);
                             *curStack += 1;
@@ -353,7 +359,7 @@ void GetGroupedCount(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int
     }
 }
 
-void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){
+void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){ 
     for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
         for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
             if (bArray.bubbleMap[i][j].playerBubble == true) { // activator
