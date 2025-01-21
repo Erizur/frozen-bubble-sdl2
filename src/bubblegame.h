@@ -34,7 +34,7 @@
 #define BUBBLE_STICKFC 7
 #define BUBBLE_SPEED 10 / 2
 #define MALUS_BUBBLE_SPEED 30 / 2
-#define LAUNCHER_SPEED 0.015 / 1.2
+#define LAUNCHER_SPEED 0.015 / 1.25
 
 #define LAUNCHER_DIAMETER 50
 #define LAUNCHER_DIAMETER_MINI 25
@@ -284,6 +284,9 @@ private:
 
     SDL_Texture *pausePenguin[35];
     SDL_Texture *dotTexture[2];
+
+    SDL_Texture *soloStatePanels[2];
+    SDL_Texture *multiStatePanels[2];
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture, *onTopTexture, *miniOnTopTexture;
 
