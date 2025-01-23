@@ -178,10 +178,10 @@ struct Bubble {
 struct Shooter {
     SDL_Texture *texture;
     SDL_Renderer *renderer;
-    float angle = M_PI/2;
+    float angle = M_PI/2.;
 
     void Render(SDL_Rect *dstrct){
-        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*100/(M_PI/2) + 0.5) - 100), NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*100./(M_PI/2.) + 0.5) - 100), NULL, SDL_FLIP_NONE);
     }
 };
 
