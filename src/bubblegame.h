@@ -34,12 +34,14 @@
 #define BUBBLE_STICKFC 7
 #define BUBBLE_SPEED 10 / 2
 #define MALUS_BUBBLE_SPEED 30 / 2
-#define LAUNCHER_SPEED 0.015 / 1.25
+#define LAUNCHER_SPEED 0.015 * 0.6
 
 #define LAUNCHER_DIAMETER 50
 #define LAUNCHER_DIAMETER_MINI 25
+#define CANON_ROTATIONS 100
 
 #define COMPRESSOR_OFFSET 28
+#define FREEFALL_CONSTANT 0.5
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -181,7 +183,7 @@ struct Shooter {
     float angle = M_PI/2.;
 
     void Render(SDL_Rect *dstrct){
-        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*100./(M_PI/2.) + 0.5) - 100), NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*CANON_ROTATIONS/(M_PI/2.) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
     }
 };
 
@@ -196,7 +198,7 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12;
+    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
     std::vector<int> remainingBubbles() {

@@ -7,6 +7,7 @@
 #include <iterator>
 
 inline int ranrange(int a, int b) { return a + rand() % ((b - a ) + 1); }
+inline float ranrange(float b) { return (rand()) / (static_cast <float> (RAND_MAX/b)); }
 
 struct SingleBubble {
     int assignedArray; // assigned board to use
@@ -17,11 +18,28 @@ struct SingleBubble {
     bool falling = false; // is falling from the top
     bool launching = false; // is launched from shooter
     int leftLimit, rightLimit, topLimit; // limit before bouncing
+    bool lowGfx = false; // running on lowgfx
     int bubbleSize = 32; // bubble size (change when creating for small variants)
+    float speedX = 0, speedY = 0, genSpeed = 0; // used for falling bubbles
+    bool chainExists = false; // enable chain reaction animation
+    SDL_Point chainDest = {}; //where to land when chain reacting
+    bool exploding = false; // if bubble is exploding animation
+    bool shouldClear = false; // if the bubble should be deleted now
+    int waitForFall = 0; // frames to wait before falling
 
     void CopyBubbleProperties(Bubble *prop) {
         bubbleId = (*prop).bubbleId;
         pos = (*prop).pos;
+    }
+
+    void GenerateFreeFall(bool explode = false, int row = 0, int col = 0) {
+        speedX = (ranrange(3) - 1.5) / (bubbleSize >= 32 ? 1 : 2);
+        speedY = (-ranrange(4) - 2) / (bubbleSize >= 32 ? 1 : 2);
+        if (!explode) {
+            falling = true; //TODO TRY AND USE OLD IMPLEMENTATION
+            waitForFall = ((13 - row) * 4) + col; //original implementation needs you iterate through the falling targets, a little too resource-heavy
+        }
+        else exploding = true;
     }
 
     bool IsCollision(Bubble *bubble) {
@@ -36,7 +54,8 @@ struct SingleBubble {
     void UpdatePosition() {
         if (launching) {
             oldpos = pos;
-            pos.x -= BUBBLE_SPEED * SDL_cos(direction);
+            if (!lowGfx) pos.x -= BUBBLE_SPEED * SDL_cos(direction);
+            else pos.x += BUBBLE_SPEED * SDL_cos(direction);
             pos.y -= BUBBLE_SPEED * SDL_sin(direction);
             if (pos.x < leftLimit) {
                 AudioMixer::Instance()->PlaySFX("rebound");
@@ -50,7 +69,25 @@ struct SingleBubble {
             }
         }
         else if (falling) {
-            // not implemented
+            if (waitForFall > 0) {
+                waitForFall--;
+            }
+            else {
+                if (!chainExists) {
+                    pos.y += genSpeed;
+                    genSpeed += FREEFALL_CONSTANT * 0.5;
+                }
+                else {
+                    // not implemented
+                }
+                if(pos.y > 470) shouldClear = true;
+            }
+        }
+        else if (exploding) {
+            pos.x += speedX * 0.5;
+            pos.y += speedY * 0.5;
+            speedY += FREEFALL_CONSTANT * 0.5;
+            if(pos.y > 470) shouldClear = true;
         }
     }
 
@@ -206,11 +243,12 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].rightLimit = (640 / 2) + 128;
         bubbleArrays[0].topLimit = 51;
         bubbleArrays[0].numSeparators = 0;
+        bubbleArrays[0].playerAssigned = 0;
         audMixer->PlayMusic("main1p");
     }
 
     LoadLevelset(DATA_DIR "/data/levels");
-    LoadLevel(10);
+    LoadLevel(1);
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
@@ -220,7 +258,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
 
 void BubbleGame::LaunchBubble(BubbleArray &bArray) {
     audMixer->PlaySFX("launch");
-    singleBubbles.push_back({0, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit});
+    singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
     PickNextBubble(bArray);
 }
 
@@ -308,23 +346,29 @@ void BubbleGame::UpdateSingleBubbles(int id) {
     BubbleArray *bArray = &bubbleArrays[id];
     for (size_t i = 0; i < singleBubbles.size(); i++) {
         SingleBubble &sBubble = singleBubbles[i];
-        if (sBubble.assignedArray != id) continue; // if not from current array, ignore!
+        if (sBubble.shouldClear) continue;
+        if (sBubble.assignedArray != bArray->playerAssigned) continue; // if not from current array, ignore!
         sBubble.UpdatePosition();
         if (sBubble.launching != true) continue; // if not being launched, ignore collision!
-        for (const std::vector<Bubble> &vecBubble : bArray->bubbleMap) for (Bubble bubble : vecBubble) {
-            if (sBubble.IsCollision(&bubble)) {
-                int row, col;
-                GetClosestFreeCell(sBubble, *bArray, &row, &col);
-                bArray->PlacePlayerBubble(sBubble.bubbleId, row, col);
-                bArray->newShoot = true;
-                audMixer->PlaySFX("stick");
-                singleBubbles.erase(singleBubbles.begin() + i);
-                CheckPossibleDestroy(*bArray);
-                CheckGameState(*bArray);
-                return;
-            }
-        };
+        for (const std::vector<Bubble> &vecBubble : bArray->bubbleMap) {
+            for (Bubble bubble : vecBubble) {
+                if (sBubble.IsCollision(&bubble)) {
+                    int row, col;
+                    GetClosestFreeCell(sBubble, *bArray, &row, &col);
+                    bArray->PlacePlayerBubble(sBubble.bubbleId, row, col);
+                    bArray->newShoot = true;
+                    audMixer->PlaySFX("stick");
+                    sBubble.shouldClear = true;
+                    CheckPossibleDestroy(*bArray);
+                    CheckGameState(*bArray);
+                    goto STOP_ITER;
+                }
+            };
+        }
+        STOP_ITER:
+        continue;
     }
+    singleBubbles.erase(std::remove_if(singleBubbles.begin(), singleBubbles.end(), [](const SingleBubble &s){ return s.shouldClear; }), singleBubbles.end());
 }
 
 bool IsTileNotGrouped(BubbleArray &bArray, std::vector<Bubble*> *bubbleCount, int row, int col) {
@@ -374,6 +418,12 @@ void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){
                 if (groupedCount >= 3) {
                     audMixer->PlaySFX("destroy_group");
                     for (Bubble *bubble : bubbleCount) {
+                        if(!lowGfx) {
+                            SingleBubble bubs = {bArray.playerAssigned, bArray.curLaunch, bubble->pos, {}, bArray.shooterSprite.angle, false, false, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx};
+                            bubs.CopyBubbleProperties(bubble);
+                            bubs.GenerateFreeFall(true);
+                            singleBubbles.push_back(bubs);
+                        }
                         bubble->bubbleId = -1;
                         bubble->playerBubble = false;
                     }
@@ -418,6 +468,12 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
                 bool attached = false;
                 CheckIfAttached(bArray, i, j, 99, &attached);
                 if (attached == false) {
+                    if(!lowGfx) {
+                        SingleBubble bubs = {bArray.playerAssigned, bArray.curLaunch, bArray.bubbleMap[i][j].pos, {}, bArray.shooterSprite.angle, false, false, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx};
+                        bubs.CopyBubbleProperties(&bArray.bubbleMap[i][j]);
+                        bubs.GenerateFreeFall(false, i, j);
+                        singleBubbles.push_back(bubs);
+                    }
                     bArray.bubbleMap[i][j].bubbleId = -1;
                     bArray.bubbleMap[i][j].playerBubble = false;
                     continue;
@@ -456,6 +512,10 @@ void BubbleGame::Render() {
     if(currentSettings.playerCount == 1) {
         BubbleArray &curArray = bubbleArrays[0];
 
+        for (int i = 1; i < 10; i++) SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, new SDL_Rect{curArray.rightLimit, 104 - (7 * i) - i, 7, 7});
+        for (int i = 0; i < curArray.numSeparators; i++) SDL_RenderCopy(rend, sepCompressorTexture, nullptr, new SDL_Rect{(640/2) - 95, (28 * i), 188, 28});
+        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5 + (28 * curArray.numSeparators), 252, 56});
+
         UpdateSingleBubbles(0);
         for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
         for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
@@ -471,10 +531,6 @@ void BubbleGame::Render() {
         } else {
             SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle))), 4, 4});
         }
-
-        for (int i = 1; i < 10; i++) SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, new SDL_Rect{curArray.rightLimit, 104 - (7 * i) - i, 7, 7});
-        for (int i = 0; i < curArray.numSeparators; i++) SDL_RenderCopy(rend, sepCompressorTexture, nullptr, new SDL_Rect{(640/2) - 95, (28 * i), 188, 28});
-        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5 + (28 * curArray.numSeparators), 252, 56});
     }
     else { //iterate until all penguins are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {
