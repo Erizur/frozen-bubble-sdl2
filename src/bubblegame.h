@@ -307,7 +307,7 @@ private:
     void PickNextBubble(BubbleArray &bArray);
     void LaunchBubble(BubbleArray &bArray);
     void UpdateSingleBubbles(int id);
-
+    
     void CheckPossibleDestroy(BubbleArray &bArray);
     void CheckAirBubbles(BubbleArray &bArray);
     void CheckGameState(BubbleArray &bArray);

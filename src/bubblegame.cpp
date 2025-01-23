@@ -32,12 +32,12 @@ struct SingleBubble {
         pos = (*prop).pos;
     }
 
-    void GenerateFreeFall(bool explode = false, int row = 0, int col = 0) {
+    void GenerateFreeFall(bool explode = false, int waitTime = 0) {
         speedX = (ranrange(3) - 1.5) / (bubbleSize >= 32 ? 1 : 2);
         speedY = (-ranrange(4) - 2) / (bubbleSize >= 32 ? 1 : 2);
         if (!explode) {
-            falling = true; //TODO TRY AND USE OLD IMPLEMENTATION
-            waitForFall = ((13 - row) * 4) + col; //original implementation needs you iterate through the falling targets, a little too resource-heavy
+            falling = true;
+            waitForFall = waitTime;
         }
         else exploding = true;
     }
@@ -428,6 +428,7 @@ void BubbleGame::CheckPossibleDestroy(BubbleArray &bArray){
                         bubble->playerBubble = false;
                     }
                 }
+                bubbleCount.clear();
                 continue;
             }
         }
@@ -460,7 +461,28 @@ void CheckIfAttached(BubbleArray &bArray, int row, int col, int fc, bool *attach
     }
 }
 
+void DoFalling(std::vector<SDL_Point> &map, std::vector<SingleBubble> &bubbles, bool &lowGfx) {
+    if (map.size() < 1 || bubbles.size() < 1) return;
+    int maxy = map[map.size() - 1].y;
+    int shiftSameLine = 0, line = maxy;
+    for (size_t i = map.size(); i > 0; i--) { //original FB does backwards sorting for the formula
+        int y = map[i - 1].y;
+        if(!lowGfx) {
+            shiftSameLine = line != y ? 0 : shiftSameLine;
+            line = y;
+            bubbles[i - 1].GenerateFreeFall(false, ((maxy - y) * 5 + shiftSameLine) * 2); // x2 because the game runs on a different speed
+            singleBubbles.push_back(bubbles[i - 1]);
+            shiftSameLine++;
+        }
+        
+    }
+    map.clear();
+    bubbles.clear();
+}
+
 void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
+    std::vector<SDL_Point> fallingLocs;
+    std::vector<SingleBubble> singlesFalling; 
     for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
         for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
             if (bArray.bubbleMap[i][j].bubbleId == -1) continue; //just skip
@@ -468,12 +490,10 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
                 bool attached = false;
                 CheckIfAttached(bArray, i, j, 99, &attached);
                 if (attached == false) {
-                    if(!lowGfx) {
-                        SingleBubble bubs = {bArray.playerAssigned, bArray.curLaunch, bArray.bubbleMap[i][j].pos, {}, bArray.shooterSprite.angle, false, false, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx};
-                        bubs.CopyBubbleProperties(&bArray.bubbleMap[i][j]);
-                        bubs.GenerateFreeFall(false, i, j);
-                        singleBubbles.push_back(bubs);
-                    }
+                    SingleBubble bubbly = {bArray.playerAssigned, bArray.curLaunch, bArray.bubbleMap[i][j].pos, {}, bArray.shooterSprite.angle, false, false, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx};
+                    bubbly.CopyBubbleProperties(&bArray.bubbleMap[i][j]);
+                    singlesFalling.push_back(bubbly);
+                    fallingLocs.push_back({(int)j, (int)i});
                     bArray.bubbleMap[i][j].bubbleId = -1;
                     bArray.bubbleMap[i][j].playerBubble = false;
                     continue;
@@ -482,6 +502,7 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
             else continue;
         }
     }
+    DoFalling(fallingLocs, singlesFalling, lowGfx);
 }
 
 void BubbleGame::CheckGameState(BubbleArray &bArray) {
