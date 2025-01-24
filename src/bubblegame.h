@@ -42,6 +42,7 @@
 
 #define COMPRESSOR_OFFSET 28
 #define FREEFALL_CONSTANT 0.5
+#define FROZEN_FRAMEWAIT 1
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -164,15 +165,15 @@ struct Bubble {
         if (bubbleId == -1) return;
         SDL_Point size;
         SDL_QueryTexture(frozen, NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, frozen, nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        SDL_RenderCopy(rend, frozen, nullptr, new SDL_Rect{pos.x - 2, pos.y - 2, size.x, size.y});
     }
 
     void Render(SDL_Renderer *rend, SDL_Texture *bubbles[], SDL_Texture *shinyTexture, SDL_Texture *frozenTexture) {
         if (bubbleId == -1) return;
         SDL_Point size;
         SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
-        if (!frozen) SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
-        else RenderFrozen(rend, frozenTexture);
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        if (frozen) RenderFrozen(rend, frozenTexture);
         if(shining) SDL_RenderCopy(rend, shinyTexture, nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
     };
 };
@@ -198,7 +199,7 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12;
+    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, frozenWait = FROZEN_FRAMEWAIT;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
     std::vector<int> remainingBubbles() {
@@ -294,7 +295,7 @@ private:
 
     bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false;
 
-    bool chainReaction;
+    bool chainReaction = false;
     int timeLeft = 0, dangerZone = 12;
 
     SetupSettings currentSettings;
@@ -311,6 +312,8 @@ private:
     void CheckPossibleDestroy(BubbleArray &bArray);
     void CheckAirBubbles(BubbleArray &bArray);
     void CheckGameState(BubbleArray &bArray);
+
+    void DoFrozenAnimation(BubbleArray &bArray, int &waitTime);
 };
 
 #endif // BUBBLEGAME_H

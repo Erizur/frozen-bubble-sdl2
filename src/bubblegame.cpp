@@ -74,7 +74,7 @@ struct SingleBubble {
             }
             else {
                 if (!chainExists) {
-                    pos.y += genSpeed;
+                    pos.y += genSpeed * 0.5;
                     genSpeed += FREEFALL_CONSTANT * 0.5;
                 }
                 else {
@@ -143,6 +143,9 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
 
     dotTexture[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/dot_green.png");
     dotTexture[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/dot_red.png");
+
+    soloStatePanels[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/lose_panel.png");
+    soloStatePanels[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_1player.png");
 }
 
 BubbleGame::~BubbleGame() {
@@ -470,7 +473,7 @@ void DoFalling(std::vector<SDL_Point> &map, std::vector<SingleBubble> &bubbles, 
         if(!lowGfx) {
             shiftSameLine = line != y ? 0 : shiftSameLine;
             line = y;
-            bubbles[i - 1].GenerateFreeFall(false, ((maxy - y) * 5 + shiftSameLine) * 2); // x2 because the game runs on a different speed
+            bubbles[i - 1].GenerateFreeFall(false, (maxy - y) * 5 + shiftSameLine);
             singleBubbles.push_back(bubbles[i - 1]);
             shiftSameLine++;
         }
@@ -505,6 +508,24 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
     DoFalling(fallingLocs, singlesFalling, lowGfx);
 }
 
+void BubbleGame::DoFrozenAnimation(BubbleArray &bArray, int &waitTime){
+    if (waitTime <= 0) {
+        waitTime = FROZEN_FRAMEWAIT;
+        for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+            for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+                if (bArray.bubbleMap[i][j].frozen != true) {
+                    bArray.bubbleMap[i][j].frozen = true;
+                    return;
+                }
+                else continue;
+            }
+        }
+        audMixer->PlaySFX("noh");
+        gameLost = true;
+    }
+    else waitTime--;
+}
+
 void BubbleGame::CheckGameState(BubbleArray &bArray) {
     bArray.turnsToCompress--;
     if (bArray.turnsToCompress == 0) {
@@ -537,13 +558,22 @@ void BubbleGame::Render() {
         for (int i = 0; i < curArray.numSeparators; i++) SDL_RenderCopy(rend, sepCompressorTexture, nullptr, new SDL_Rect{(640/2) - 95, (28 * i), 188, 28});
         SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5 + (28 * curArray.numSeparators), 252, 56});
 
-        UpdateSingleBubbles(0);
         for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
+
+        if(gameFinish) {
+            if (!gameWon && !gameLost) DoFrozenAnimation(curArray, curArray.frozenWait);
+
+            if (gameLost) SDL_RenderCopy(rend, soloStatePanels[0], nullptr, new SDL_Rect{640/2 - 173, 480 - 248, 345, 124});
+            else if (gameWon) SDL_RenderCopy(rend, soloStatePanels[1], nullptr, new SDL_Rect{640/2 - 173, 480 - 289, 329, 159});
+        }
+
+        UpdateSingleBubbles(0);
         for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
 
-        SDL_RenderCopy(rend, imgBubbles[curArray.curLaunch], nullptr, new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
+        SDL_RenderCopy(rend, gameFinish && !gameWon ? imgBubbleFrozen : imgBubbles[curArray.curLaunch], nullptr, gameFinish && !gameWon ? new SDL_Rect{640/2 - 18, 480 - 91, 34, 48} : new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
         SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, new SDL_Rect{640/2 - 16, 480 - 40, 32, 32});
         SDL_RenderCopy(rend, onTopTexture, nullptr, new SDL_Rect{640/2 - 19, 480 - 43, 39, 39});
+        if (gameFinish && !gameWon) SDL_RenderCopy(rend, imgBubbleFrozen, nullptr, new SDL_Rect{640/2 - 18, 480 - 42, 34, 48});
 
         UpdatePenguin(curArray);
         if(!lowGfx) {
@@ -556,6 +586,14 @@ void BubbleGame::Render() {
     else { //iterate until all penguins are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {
             BubbleArray &curArray = bubbleArrays[i];
+
+            UpdateSingleBubbles(i);
+            for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
+            for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
+
+            SDL_RenderCopy(rend, imgBubbles[curArray.curLaunch], nullptr, new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
+            SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, new SDL_Rect{640/2 - 16, 480 - 40, 32, 32});
+            SDL_RenderCopy(rend, onTopTexture, nullptr, new SDL_Rect{640/2 - 19, 480 - 43, 39, 39});
 
             UpdatePenguin(curArray);
             if(!lowGfx) {
