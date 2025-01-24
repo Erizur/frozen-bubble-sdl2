@@ -235,7 +235,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
     currentSettings = setup;
 
-    lowGfx = GameSettings::Instance()->gfxLevel() > 2 ? true : false;
+    lowGfx = GameSettings::Instance()->gfxLevel() > 2;
 
     if (currentSettings.playerCount == 1){
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
