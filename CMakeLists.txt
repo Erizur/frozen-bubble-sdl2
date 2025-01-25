@@ -42,6 +42,13 @@ if(UNIX OR APPLE)
     add_subdirectory(server)
 endif()
 
+set(RES_FILES "")
+if(WIN32 OR MINGW)
+    set(RES_FILES share/icons/fb.rc)
+    set(CMAKE_RC_COMPILER_INIT windres)
+    ENABLE_LANGUAGE(RC)
+endif()
+
 add_executable(frozen-bubble
     src/frozenbubble.cpp
     src/main.cpp
@@ -51,7 +58,10 @@ add_executable(frozen-bubble
     src/audiomixer.cpp
     src/shaderstuff.cpp
     src/bubblegame.cpp
+    ${RES_FILES}
 )
+
+
 
 set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
 set_property(TARGET frozen-bubble PROPERTY CXX_EXTENSIONS OFF)
