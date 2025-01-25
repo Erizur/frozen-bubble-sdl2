@@ -43,6 +43,9 @@
 #define COMPRESSOR_OFFSET 28
 #define FREEFALL_CONSTANT 0.5
 #define FROZEN_FRAMEWAIT 1
+
+#define SCREEN_CENTER_X 640/2
+#define SCREEN_CENTER_Y 480/2
 #pragma endregion
 
 //hardcoded framecount, theres like a ton of frames here
@@ -56,9 +59,11 @@ struct Penguin {
     int sleeping = 0;
     bool invertAnimation = false;
     SDL_Renderer *rend;
+    SDL_Rect rect;
 
-    void LoadPenguin(SDL_Renderer* renderer, char *whichOne) {
+    void LoadPenguin(SDL_Renderer* renderer, char *whichOne, SDL_Rect rct) {
         rend = renderer;
+        rect = rct;
 
         char path[256];
         for (int i = 0; i < PENGUIN_HANDLEFC; i++) {
@@ -149,8 +154,8 @@ struct Penguin {
         else return lose[curFrame - 1];
     }
 
-    void Render(SDL_Rect *dstrct) {
-        SDL_RenderCopy(rend, CurrentFrame(), nullptr, dstrct);
+    void Render() {
+        SDL_RenderCopy(rend, CurrentFrame(), nullptr, &rect);
     }
 };
 
@@ -160,21 +165,27 @@ struct Bubble {
     bool playerBubble = false; // if bubble was launched by player
     bool shining = false; // doing that shiny animation
     bool frozen = false; // frozen (game over)
+    SDL_Rect coords = {}, frozenCoords = {};
+
+    void MeasureRects(SDL_Texture *bubbleT, SDL_Texture *frozenT){
+        SDL_Point size;
+        SDL_QueryTexture(bubbleT, NULL, NULL, &size.x, &size.y);
+        coords = {pos.x, pos.y, size.x, size.y};
+        SDL_QueryTexture(frozenT, NULL, NULL, &size.x, &size.y);
+        frozenCoords = {pos.x - 2, pos.y - 2, size.x, size.y};
+    }
 
     void RenderFrozen(SDL_Renderer *rend, SDL_Texture *frozen) {
         if (bubbleId == -1) return;
-        SDL_Point size;
-        SDL_QueryTexture(frozen, NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, frozen, nullptr, new SDL_Rect{pos.x - 2, pos.y - 2, size.x, size.y});
+        SDL_RenderCopy(rend, frozen, nullptr, &frozenCoords);
     }
 
     void Render(SDL_Renderer *rend, SDL_Texture *bubbles[], SDL_Texture *shinyTexture, SDL_Texture *frozenTexture) {
         if (bubbleId == -1) return;
-        SDL_Point size;
-        SDL_QueryTexture(bubbles[bubbleId], NULL, NULL, &size.x, &size.y);
-        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        MeasureRects(bubbles[bubbleId], frozenTexture);
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, &coords);
         if (frozen) RenderFrozen(rend, frozenTexture);
-        if(shining) SDL_RenderCopy(rend, shinyTexture, nullptr, new SDL_Rect{pos.x, pos.y, size.x, size.y});
+        if(shining) SDL_RenderCopy(rend, shinyTexture, nullptr, &coords);
     };
 };
 
@@ -182,9 +193,10 @@ struct Shooter {
     SDL_Texture *texture;
     SDL_Renderer *renderer;
     float angle = M_PI/2.;
+    SDL_Rect rect = {};
 
-    void Render(SDL_Rect *dstrct){
-        SDL_RenderCopyEx(renderer, texture, nullptr, dstrct, ((angle*CANON_ROTATIONS/(M_PI/2.) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
+    void Render(){
+        SDL_RenderCopyEx(renderer, texture, nullptr, &rect, ((angle*CANON_ROTATIONS/(M_PI/2.) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
     }
 };
 
@@ -201,6 +213,8 @@ struct BubbleArray {
     Shooter shooterSprite;
     int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, frozenWait = FROZEN_FRAMEWAIT;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
+
+    SDL_Rect compressorRct, lGfxShooterRct, curLaunchRct, nextBubbleRct, onTopRct, frozenBottomRct;
 
     std::vector<int> remainingBubbles() {
         std::vector<int> a;
@@ -292,6 +306,8 @@ private:
     SDL_Texture *multiStatePanels[2];
 
     SDL_Texture *shooterTexture, *miniShooterTexture, *lowShooterTexture, *compressorTexture, *sepCompressorTexture, *onTopTexture, *miniOnTopTexture;
+
+    SDL_Rect panelRct;
 
     bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false;
 

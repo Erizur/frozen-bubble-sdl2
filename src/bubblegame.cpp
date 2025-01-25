@@ -5,6 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iterator>
+#include <memory>
 
 inline int ranrange(int a, int b) { return a + rand() % ((b - a ) + 1); }
 inline float ranrange(float b) { return (rand()) / (static_cast <float> (RAND_MAX/b)); }
@@ -26,6 +27,7 @@ struct SingleBubble {
     bool exploding = false; // if bubble is exploding animation
     bool shouldClear = false; // if the bubble should be deleted now
     int waitForFall = 0; // frames to wait before falling
+    SDL_Rect rect = {}; // rendering rect
 
     void CopyBubbleProperties(Bubble *prop) {
         bubbleId = (*prop).bubbleId;
@@ -93,7 +95,10 @@ struct SingleBubble {
 
     void Render(SDL_Renderer *rend, SDL_Texture *bubbles[]) {
         if (bubbleId == -1) return;
-        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, new SDL_Rect{pos.x, pos.y, bubbleSize, bubbleSize});
+        rect.x = pos.x;
+        rect.y = pos.y;
+        rect.w = rect.h = bubbleSize;
+        SDL_RenderCopy(rend, bubbles[bubbleId], nullptr, &rect);
     };
 };
 
@@ -204,29 +209,42 @@ void BubbleGame::LoadLevel(int id){
     int bubbleSize = 32;
     int initBubbleY = (int)(bubbleSize / 1.15);
 
-    SDL_Point *offset = &bubbleArrays[0].bubbleOffset;
-    std::array<std::vector<Bubble>, 13> *bubbleMap = &bubbleArrays[0].bubbleMap;
+    SDL_Point &offset = bubbleArrays[0].bubbleOffset;
+    std::array<std::vector<Bubble>, 13> &bubbleMap = bubbleArrays[0].bubbleMap;
 
     for (size_t i = 0; i < level.size(); i++)
     {
         int smallerSep = level[i].size() % 2 == 0 ? 0 : bubbleSize / 2;
         for (size_t j = 0; j < level[i].size(); j++)
         {
-            (*bubbleMap)[i].push_back(Bubble{level[i][j], {(smallerSep + bubbleSize * ((int)j)) + offset->x, (initBubbleY * ((int)i)) + offset->y}});
+            bubbleMap[i].push_back(Bubble{level[i][j], {(smallerSep + bubbleSize * ((int)j)) + offset.x, (initBubbleY * ((int)i)) + offset.y}});
         }
     }
-    if((*bubbleMap)[9].size() % 2 == 0) {
+    if(bubbleMap[9].size() % 2 == 0) {
         for (int i = 0; i < 3; i++)
         {
             int smallerSep = i % 2 == 0 ? 0 : bubbleSize / 2;
-            for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) (*bubbleMap)[10 + i].push_back({-1, {(smallerSep + bubbleSize * j) + offset->x, (initBubbleY * (10 + i)) + offset->y}});
+            for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) bubbleMap[10 + i].push_back({-1, {(smallerSep + bubbleSize * j) + offset.x, (initBubbleY * (10 + i)) + offset.y}});
         }
     } else {
         for (int i = 1; i < 4; i++)
         {
             int smallerSep = i % 2 == 0 ? bubbleSize / 2 : 0;
-            for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) (*bubbleMap)[10 + (i - 1)].push_back({-1, {(smallerSep + bubbleSize * j) + offset->x, (initBubbleY * (9 + i)) + offset->y}});
+            for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) bubbleMap[10 + (i - 1)].push_back({-1, {(smallerSep + bubbleSize * j) + offset.x, (initBubbleY * (9 + i)) + offset.y}});
         }
+    }
+}
+
+void SetupGameMetrics(BubbleArray &bArray, int playerCount, bool lowGfx){
+    bool onePlayer = playerCount == 1;
+
+    if (onePlayer) {
+        if (lowGfx) bArray.lGfxShooterRct.w = bArray.lGfxShooterRct.h = 4;
+        bArray.compressorRct = {SCREEN_CENTER_X - 128, -5 + (28 * bArray.numSeparators), 252, 56};
+        bArray.curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
+        bArray.nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
+        bArray.onTopRct = {SCREEN_CENTER_X - 19, 480 - 43, 39, 39};
+        bArray.frozenBottomRct = {SCREEN_CENTER_X - 18, 480 - 42, 34, 48};
     }
 }
 
@@ -239,8 +257,9 @@ void BubbleGame::NewGame(SetupSettings setup) {
 
     if (currentSettings.playerCount == 1){
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
-        bubbleArrays[0].penguinSprite.LoadPenguin(rend, (char*)"p1");
+        bubbleArrays[0].penguinSprite.LoadPenguin(rend, (char*)"p1", {SCREEN_CENTER_X + 84, 480 - 60, 80, 60});
         bubbleArrays[0].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
+        bubbleArrays[0].shooterSprite.rect = {SCREEN_CENTER_X - 50, 480 - 123, 100, 100};
         bubbleArrays[0].bubbleOffset = {190, 51};
         bubbleArrays[0].leftLimit = (640 / 2) - 128;
         bubbleArrays[0].rightLimit = (640 / 2) + 128;
@@ -248,6 +267,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].numSeparators = 0;
         bubbleArrays[0].playerAssigned = 0;
         audMixer->PlayMusic("main1p");
+        SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
     }
 
     LoadLevelset(DATA_DIR "/data/levels");
@@ -533,16 +553,20 @@ void BubbleGame::CheckGameState(BubbleArray &bArray) {
         bArray.dangerZone--;
         bArray.numSeparators++;
         bArray.ExpandOffset(0, 28);
+        bArray.compressorRct.y += 28;
         audMixer->PlaySFX("newroot_solo");
     }
     if (bArray.allClear()) {
         gameFinish = true;
         gameWon = true;
+        panelRct = {SCREEN_CENTER_X - 173, 480 - 289, 329, 159};
         bArray.penguinSprite.PlayAnimation(10);
     }
     if (bArray.bubbleOnDanger()) {
         gameFinish = true;
         audMixer->PlaySFX("lose");
+        panelRct = {SCREEN_CENTER_X - 173, 480 - 248, 345, 124};
+        bArray.curLaunchRct = {bArray.curLaunchRct.x - 2, bArray.curLaunchRct.y - 2, 34, 48};
         bArray.penguinSprite.PlayAnimation(11);
     }
 }
@@ -554,33 +578,49 @@ void BubbleGame::Render() {
     if(currentSettings.playerCount == 1) {
         BubbleArray &curArray = bubbleArrays[0];
 
-        for (int i = 1; i < 10; i++) SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, new SDL_Rect{curArray.rightLimit, 104 - (7 * i) - i, 7, 7});
-        for (int i = 0; i < curArray.numSeparators; i++) SDL_RenderCopy(rend, sepCompressorTexture, nullptr, new SDL_Rect{(640/2) - 95, (28 * i), 188, 28});
-        SDL_RenderCopy(rend, compressorTexture, nullptr, new SDL_Rect{(640/2) - 128, -5 + (28 * curArray.numSeparators), 252, 56});
+        SDL_Rect rct;
+        for (int i = 1; i < 10; i++) {
+            rct.x = curArray.rightLimit;
+            rct.y = 104 - (7 * i) - i;
+            rct.w = rct.h = 7;
+            SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, &rct);
+        }
+        for (int i = 0; i < curArray.numSeparators; i++) {
+            rct.x = SCREEN_CENTER_X - 95;
+            rct.y = (28 * i);
+            rct.w = 188;
+            rct.h = 28;
+            SDL_RenderCopy(rend, sepCompressorTexture, nullptr, &rct);
+        }
+        SDL_RenderCopy(rend, compressorTexture, nullptr, &curArray.compressorRct);
 
         for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
 
         if(gameFinish) {
             if (!gameWon && !gameLost) DoFrozenAnimation(curArray, curArray.frozenWait);
 
-            if (gameLost) SDL_RenderCopy(rend, soloStatePanels[0], nullptr, new SDL_Rect{640/2 - 173, 480 - 248, 345, 124});
-            else if (gameWon) SDL_RenderCopy(rend, soloStatePanels[1], nullptr, new SDL_Rect{640/2 - 173, 480 - 289, 329, 159});
+            if (gameLost) SDL_RenderCopy(rend, soloStatePanels[0], nullptr, &panelRct);
+            else if (gameWon) SDL_RenderCopy(rend, soloStatePanels[1], nullptr, &panelRct);
         }
 
-        UpdateSingleBubbles(0);
-        for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
+        if(singleBubbles.size() > 0) {
+            UpdateSingleBubbles(0);
+            for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
+        }
 
-        SDL_RenderCopy(rend, gameFinish && !gameWon ? imgBubbleFrozen : imgBubbles[curArray.curLaunch], nullptr, gameFinish && !gameWon ? new SDL_Rect{640/2 - 18, 480 - 91, 34, 48} : new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
-        SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, new SDL_Rect{640/2 - 16, 480 - 40, 32, 32});
-        SDL_RenderCopy(rend, onTopTexture, nullptr, new SDL_Rect{640/2 - 19, 480 - 43, 39, 39});
-        if (gameFinish && !gameWon) SDL_RenderCopy(rend, imgBubbleFrozen, nullptr, new SDL_Rect{640/2 - 18, 480 - 42, 34, 48});
+        SDL_RenderCopy(rend, gameFinish && !gameWon ? imgBubbleFrozen : imgBubbles[curArray.curLaunch], nullptr, &curArray.curLaunchRct);
+        SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, &curArray.nextBubbleRct);
+        SDL_RenderCopy(rend, onTopTexture, nullptr, &curArray.onTopRct);
+        if (gameFinish && !gameWon) SDL_RenderCopy(rend, imgBubbleFrozen, nullptr, &curArray.frozenBottomRct);
 
         UpdatePenguin(curArray);
         if(!lowGfx) {
-            curArray.penguinSprite.Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
-            curArray.shooterSprite.Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+            curArray.penguinSprite.Render();
+            curArray.shooterSprite.Render();
         } else {
-            SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle))), 4, 4});
+            curArray.lGfxShooterRct.x = (int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle)));
+            curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle)));
+            SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
         }
     }
     else { //iterate until all penguins are rendered
@@ -597,10 +637,12 @@ void BubbleGame::Render() {
 
             UpdatePenguin(curArray);
             if(!lowGfx) {
-                curArray.penguinSprite.Render(new SDL_Rect{640/2 + 84, 480 - 60, 80, 60});
-                curArray.shooterSprite.Render(new SDL_Rect{640/2 - 50, 480 - 123, 100, 100});
+                curArray.penguinSprite.Render();
+                curArray.shooterSprite.Render();
             } else {
-                SDL_RenderCopy(rend, lowShooterTexture, nullptr, new SDL_Rect{(int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle))), (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle))), 4, 4});
+                curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle)));
+                curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle)));
+                SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
             }
         }
     }
