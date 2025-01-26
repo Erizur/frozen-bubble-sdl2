@@ -40,6 +40,7 @@ FrozenBubble::FrozenBubble() {
     SDL_FreeSurface(icon);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_RenderSetLogicalSize(renderer, 640, 480);
 
     if(!renderer) {
         IsGameQuit = true;
@@ -75,7 +76,7 @@ uint8_t FrozenBubble::RunForEver()
 {
     // on init, try playing one of these songs depending on the current state:
     if(currentState == TitleScreen) audMixer->PlayMusic("intro");
-    mainGame->NewGame({false, 1, false});
+    //else if (currentState == MainGame) mainGame->NewGame({false, 1, false});
 
     float framerate = 60;
     float frametime = 1/framerate * 1000;
@@ -95,10 +96,12 @@ uint8_t FrozenBubble::RunForEver()
         }
 
         // render
-        SDL_RenderClear(renderer);
-        if (currentState == TitleScreen) mainMenu->Render();
-        else if (currentState == MainGame) mainGame->Render();
-        SDL_RenderPresent(renderer);
+        if(!IsGamePause) {
+            SDL_RenderClear(renderer);
+            if (currentState == TitleScreen) mainMenu->Render();
+            else if (currentState == MainGame) mainGame->Render();
+            SDL_RenderPresent(renderer);
+        }
         if(elapsed < frametime) {
             SDL_Delay(frametime - elapsed);
         }
@@ -119,8 +122,16 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
                 }
             }
             break;
+        case SDL_KEYDOWN:
+            if(e->key.repeat) break;
+            switch(e->key.keysym.sym) {
+                case SDLK_PAUSE:
+                    CallGamePause();
+                    break;
+            }
     }
 
+    if (IsGamePause) return;
     if(currentState == TitleScreen) mainMenu->HandleInput(e);
     if(currentState == MainGame) mainGame->HandleInput(e);
 }

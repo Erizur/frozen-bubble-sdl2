@@ -1,6 +1,7 @@
 #include "frozenbubble.h"
 #include "bubblegame.h"
 #include "audiomixer.h"
+#include "transitionmanager.h"
 
 #include <cmath>
 #include <algorithm>
@@ -566,7 +567,7 @@ void BubbleGame::CheckGameState(BubbleArray &bArray) {
         gameFinish = true;
         audMixer->PlaySFX("lose");
         panelRct = {SCREEN_CENTER_X - 173, 480 - 248, 345, 124};
-        bArray.curLaunchRct = {bArray.curLaunchRct.x - 2, bArray.curLaunchRct.y - 2, 34, 48};
+        bArray.curLaunchRct = {bArray.curLaunchRct.x - 1, bArray.curLaunchRct.y - 1, 34, 48};
         bArray.penguinSprite.PlayAnimation(11);
     }
 }
@@ -645,6 +646,11 @@ void BubbleGame::Render() {
                 SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
             }
         }
+    }
+
+    if (!firstRenderDone) {
+        TransitionManager::Instance()->TakeSnipOut(rend);
+        firstRenderDone = true;
     }
 }
 

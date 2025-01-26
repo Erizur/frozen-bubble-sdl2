@@ -1,6 +1,7 @@
 #include "mainmenu.h"
 #include "audiomixer.h"
 #include "frozenbubble.h"
+#include "transitionmanager.h"
 
 #include <SDL2/SDL_image.h>
 
@@ -157,17 +158,6 @@ void MainMenu::HandleInput(SDL_Event *e){
                 case SDLK_n:
                     if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) RefreshCandy();
                     break;
-                case SDLK_PAUSE:
-                    while(1) {
-                        if (SDL_PollEvent(e)) {
-                            if(e->type == SDL_KEYDOWN) break;
-                            else if (e->type == SDL_QUIT) {
-                                FrozenBubble::Instance()->CallGameQuit();
-                                break;
-                            }
-                        }
-                    }
-                    break;
                 case SDLK_ESCAPE:
                     FrozenBubble::Instance()->CallGameQuit();
                     break;
@@ -301,9 +291,8 @@ void MainMenu::CandyRender() {
 }
 
 void MainMenu::press() {
-    buttons[active_button_index].Pressed();
-
     AudioMixer::Instance()->PlaySFX("menu_selected");
+    buttons[active_button_index].Pressed(this);
 }
 
 void MainMenu::down()
@@ -333,4 +322,12 @@ void MainMenu::up()
     buttons[active_button_index].Activate();
 
     AudioMixer::Instance()->PlaySFX("menu_change");
+}
+
+void MainMenu::SetupNewGame(int mode) {
+    if(mode == 1) {
+        //wip
+        TransitionManager::Instance()->DoSnipIn(const_cast<SDL_Renderer*>(renderer));
+        FrozenBubble::Instance()->bubbleGame()->NewGame({false, 1, false});
+    }
 }

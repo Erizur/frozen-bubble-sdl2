@@ -1,7 +1,6 @@
 #include "menubutton.h"
 #include "gamesettings.h"
-#include <SDL2/SDL_image.h>
-#include <utility>
+#include "mainmenu.h"
 
 MenuButton::MenuButton(uint32_t x, uint32_t y, const std::string &name, const SDL_Renderer *renderer, const std::string icontag, const int sheetlen)
     : isActive(false)
@@ -127,10 +126,11 @@ void MenuButton::Render(const SDL_Renderer *renderer)
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), icons[fixedFrame], nullptr, &icon_rect);
 }
 
-void MenuButton::Pressed()
+void MenuButton::Pressed(void *parent)
 {
     //oh boy
     if(buttonName == "graphics") GameSettings::Instance()->SetValue("GFX:Quality", "");
+    if(buttonName == "1pgame") ((MainMenu *)parent)->SetupNewGame(1);
 }
 
 void MenuButton::Activate()

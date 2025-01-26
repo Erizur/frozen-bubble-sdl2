@@ -45,10 +45,14 @@ void synchro_before(SDL_Surface *s)
     ticks = SDL_GetTicks();
     myLockSurface(s);
 }
-void synchro_after(SDL_Surface *s)
+void synchro_after(SDL_Surface *s, SDL_Renderer *rend, SDL_Texture *tex)
 {
     myUnlockSurface(s);
-    //SDL_RenderPresent();
+    SDL_RenderClear(rend);
+    if (tex != nullptr) SDL_DestroyTexture(tex);
+    tex = SDL_CreateTextureFromSurface(rend, s);
+    SDL_RenderCopy(rend, tex, nullptr, nullptr);
+    SDL_RenderPresent(rend);
     to_wait = SDL_GetTicks() - ticks;
     if (to_wait < ANIM_SPEED)
     {
@@ -91,7 +95,7 @@ void copy_column(int c, SDL_Surface *s, SDL_Surface *img)
         memcpy(s->pixels + y * img->pitch + c * bpp, img->pixels + y * img->pitch + c * bpp, bpp);
 }
 
-void store_effect(SDL_Surface *s, SDL_Surface *img)
+void store_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
 
     int step = 0;
@@ -115,7 +119,7 @@ void store_effect(SDL_Surface *s, SDL_Surface *img)
             }
             step++;
 
-            synchro_after(s);
+            synchro_after(s, rend, tex);
         }
     }
     else
@@ -136,14 +140,14 @@ void store_effect(SDL_Surface *s, SDL_Surface *img)
             }
             step++;
 
-            synchro_after(s);
+            synchro_after(s, rend, tex);
         }
     }
 }
 
 /* -------------- Bars ------------------ */
 
-void bars_effect(SDL_Surface *s, SDL_Surface *img)
+void bars_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
     int bpp = img->format->BytesPerPixel;
     const int bars_max_steps = 40;
@@ -163,7 +167,7 @@ void bars_effect(SDL_Surface *s, SDL_Surface *img)
                 memcpy(s->pixels + y__ + x__, img->pixels + y__ + x__, (XRES / bars_num) * bpp);
             }
         }
-        synchro_after(s);
+        synchro_after(s, rend, tex);
     }
 }
 
@@ -179,7 +183,7 @@ int fillrect(int i, int j, SDL_Surface *s, SDL_Surface *img, int bpp, const int 
     return 1;
 }
 
-void squares_effect(SDL_Surface *s, SDL_Surface *img)
+void squares_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
     int bpp = img->format->BytesPerPixel;
     const int squares_size = 32;
@@ -200,7 +204,7 @@ void squares_effect(SDL_Surface *s, SDL_Surface *img)
             k++;
         }
 
-        synchro_after(s);
+        synchro_after(s, rend, tex);
     }
 }
 
@@ -226,7 +230,7 @@ void circle_init(void)
         }
 }
 
-void circle_effect(SDL_Surface *s, SDL_Surface *img)
+void circle_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
     int step = circle_max_steps;
     int bpp = img->format->BytesPerPixel;
@@ -255,7 +259,7 @@ void circle_effect(SDL_Surface *s, SDL_Surface *img)
         }
         step--;
 
-        synchro_after(s);
+        synchro_after(s, rend, tex);
     }
 }
 
@@ -318,7 +322,7 @@ void plasma_init(char *datapath)
         fb__out_of_memory();
 }
 
-void plasma_effect(SDL_Surface *s, SDL_Surface *img)
+void plasma_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
     int step = 0;
     int bpp = img->format->BytesPerPixel;
@@ -408,23 +412,22 @@ void plasma_effect(SDL_Surface *s, SDL_Surface *img)
 
         step++;
 
-        synchro_after(s);
+        synchro_after(s, rend, tex);
     }
 }
 
-void effect(SDL_Surface *s, SDL_Surface *img)
+void effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
 {
     int randvalue = rand_(8);
-    if (randvalue == 1 || randvalue == 2) store_effect(s, img);
-    else if (randvalue == 3 || randvalue == 4 || randvalue == 5) plasma_effect(s, img);
-    else if (randvalue == 6) circle_effect(s, img);
-    else if (randvalue == 7) bars_effect(s, img);
-    else squares_effect(s, img);
+    if (randvalue == 1 || randvalue == 2) store_effect(s, img, rend, tex);
+    else if (randvalue == 3 || randvalue == 4 || randvalue == 5) plasma_effect(s, img, rend, tex);
+    else if (randvalue == 6) circle_effect(s, img, rend, tex);
+    else if (randvalue == 7) bars_effect(s, img, rend, tex);
+    else squares_effect(s, img, rend, tex);
 }
 
 void shrink_(SDL_Surface *dest, SDL_Surface *orig, int xpos, int ypos, SDL_Rect *orig_rect, int factor)
 {
-    int bpp = dest->format->BytesPerPixel;
     int rx = orig_rect->x / factor;
     int rw = orig_rect->w / factor;
     int ry = orig_rect->y / factor;
@@ -513,7 +516,6 @@ void rotate_nearest_(SDL_Surface *dest, SDL_Surface *orig, double angle)
 
 void rotate_bilinear_(SDL_Surface *dest, SDL_Surface *orig, double angle)
 {
-    int Bpp = dest->format->BytesPerPixel;
     int x_, y_;
     int r, g, b;
     double a;
@@ -539,7 +541,6 @@ void rotate_bilinear_(SDL_Surface *dest, SDL_Surface *orig, double angle)
         double y__ = (y - dest->h / 2) * cosval - dest->w / 2 * sinval + dest->h / 2;
         for (x = 0; x < dest->w; x++)
         {
-            Uint32 *A, *B, *C, *D;
             x_ = floor(x__);
             y_ = floor(y__);
             if (x_ < 0 || x_ > orig->w - 2 || y_ < 0 || y_ > orig->h - 2)
@@ -912,7 +913,6 @@ void enlighten_(SDL_Surface *dest, SDL_Surface *orig, int offset)
 
 void stretch_(SDL_Surface *dest, SDL_Surface *orig, int offset)
 {
-    int Bpp = dest->format->BytesPerPixel;
     int x_, y_;
     int r, g, b;
     Uint8 Ar, Ag, Ab, Aa, Br, Bg, Bb, Ba, Cr, Cg, Cb, Ca, Dr, Dg, Db, Da;
@@ -987,7 +987,6 @@ void stretch_(SDL_Surface *dest, SDL_Surface *orig, int offset)
 
 void tilt_(SDL_Surface *dest, SDL_Surface *orig, int offset)
 {
-    int Bpp = dest->format->BytesPerPixel;
     int x_, y_;
     int r, g, b;
     Uint8 Ar, Ag, Ab, Aa, Br, Bg, Bb, Ba, Cr, Cg, Cb, Ca, Dr, Dg, Db, Da;
@@ -1172,7 +1171,6 @@ void points_(SDL_Surface *dest, SDL_Surface *orig, SDL_Surface *mask)
 
 void waterize_(SDL_Surface *dest, SDL_Surface *orig, int offset)
 {
-    int Bpp = dest->format->BytesPerPixel;
     int x_, y_;
     Uint8 Ar, Ag, Ab, Aa, Br, Bg, Bb, Ba, Cr, Cg, Cb, Ca, Dr, Dg, Db, Da;
     int r, g, b;
@@ -1428,7 +1426,6 @@ void blacken_(SDL_Surface *surf, int step)
 
 void overlook_init_(SDL_Surface *surf)
 {
-    int Bpp = surf->format->BytesPerPixel;
     if (surf->format->BytesPerPixel != 4)
     {
         fprintf(stderr, "overlook_init: dest surface must be 32bpp\n");
@@ -1447,8 +1444,6 @@ void overlook_init_(SDL_Surface *surf)
 
 void overlook_(SDL_Surface *dest, SDL_Surface *orig, int step, int pivot)
 {
-    int Bpp = dest->format->BytesPerPixel;
-
     int x_, y_;
     double shading = 1 - CLAMP((double)step / 70, 0, 1);
     double x_factor = 1 - (double)step / 700;
@@ -1533,7 +1528,6 @@ static int counter_for_new_flake = 1000;
 
 void snow_(SDL_Surface *dest, SDL_Surface *orig)
 {
-    int Bpp = dest->format->BytesPerPixel;
     static struct flake *flakes = NULL;
     int i, amount = 200;
     double wideness = 2.0, y_speed = 0.2, moving_speed = 0.1;

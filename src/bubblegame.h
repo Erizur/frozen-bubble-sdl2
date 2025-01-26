@@ -309,7 +309,7 @@ private:
 
     SDL_Rect panelRct;
 
-    bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false;
+    bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false, firstRenderDone = false;
 
     bool chainReaction = false;
     int timeLeft = 0, dangerZone = 12;

@@ -22,13 +22,6 @@ public:
     void Dispose();
     static AudioMixer* Instance();
 private:
-    /*inline static const char * sfxTags[] = {
-        "stick", "destroy_group", "newroot",
-        "newroot_solo", "lose", "hurry", "pause",
-        "menu_change", "menu_selected", "rebound",
-        "launch", "malus", "noh", "snore", "cancel",
-        "typewriter", "applause", "chatted"
-    };*/
     std::map<const char *, Mix_Chunk *> sfxFiles;
     Mix_Chunk* GetSFX(const char *);
 

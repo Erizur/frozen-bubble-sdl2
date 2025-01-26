@@ -28,6 +28,7 @@ public:
     void Render(void);
     void RefreshCandy();
     void HandleInput(SDL_Event *e);
+    void SetupNewGame(int mode);
 private:
     const SDL_Renderer *renderer;
     std::vector<MenuButton> buttons;

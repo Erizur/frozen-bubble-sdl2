@@ -24,15 +24,17 @@ class FrozenBubble
 public:
     int startTime = 0, totalBubbles = 0;
     void CallGameQuit() { IsGameQuit = true; };
+    void CallGamePause() { IsGamePause = !IsGamePause; };
 
     uint8_t RunForEver();
-    GameState currentState = MainGame;
+    GameState currentState = TitleScreen;
 
     FrozenBubble(const FrozenBubble& obj) = delete;
     static FrozenBubble* Instance();
+    BubbleGame* bubbleGame() { return mainGame; };
 private:
     int addictedTime = 0;
-    bool IsGameQuit;
+    bool IsGameQuit, IsGamePause = false;
     SDL_Window *window;
     SDL_Renderer *renderer;
 

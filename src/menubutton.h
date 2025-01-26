@@ -2,6 +2,8 @@
 #define MENUBUTTON_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <utility>
 #include <string>
 #include <vector>
 
@@ -15,7 +17,7 @@ public:
     MenuButton & operator= ( MenuButton && ) = delete;
     ~MenuButton();
     void Render(const SDL_Renderer *renderer);
-    void Pressed();
+    void Pressed(void *parent);
     void Activate();
     void Deactivate();
 private:

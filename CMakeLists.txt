@@ -58,6 +58,7 @@ add_executable(frozen-bubble
     src/audiomixer.cpp
     src/shaderstuff.cpp
     src/bubblegame.cpp
+    src/transitionmanager.cpp
     ${RES_FILES}
 )
 
