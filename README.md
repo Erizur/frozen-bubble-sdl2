@@ -1,5 +1,5 @@
 # Frozen-Bubble: SDL2
-An ongoing port of the original Frozen-Bubble 2 into a newer C++ codebase using SDL2. I am plan on reimplementing most features from the original Frozen-Bubble 2 into the codebase, but some of them might be out of my knowledge, but feel free to contribute if you want!
+An ongoing port of the original Frozen-Bubble 2 into a newer C++ codebase using SDL2. I am planning on reimplementing most features from the original Frozen-Bubble 2 into the codebase, but some of them might be out of my knowledge. Feel free to contribute if you want!
 
 **Currently implemented:**
 - [X] Title Screen
@@ -7,7 +7,7 @@ An ongoing port of the original Frozen-Bubble 2 into a newer C++ codebase using 
     - [X] Credits banner
     - [X] Graphics adjust button
 - [X] Game Settings
-    - [ ] Default settings
+    - [X] Default settings
     - [ ] Read highscores
     - [X] Read data from settings.ini
 - [X] Audio Mixer
