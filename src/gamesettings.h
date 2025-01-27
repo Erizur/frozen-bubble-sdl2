@@ -17,6 +17,9 @@ public:
 
     const char *prefPath = SDL_GetPrefPath("", "frozen-bubble"); //do not place org name if you don't want duplicated folders!
     int gfxLevel() { return gfxQuality; }
+    SDL_Point curResolution() { return {windowWidth, windowHeight}; }
+    bool fullscreenMode() { return useFullscreen; }
+    bool linearScaling;
     bool canPlayMusic() { return playMusic; }
     bool canPlaySFX() { return playSfx; }
     bool useClassicAudio() { return classicSound; } 
@@ -30,8 +33,8 @@ private:
     void CreateDefaultSettings();
     dictionary *optDict;
 
-    int gfxQuality;
-    bool playMusic, playSfx, classicSound;
+    int gfxQuality, windowWidth, windowHeight;
+    bool useFullscreen, playMusic, playSfx, classicSound;
 
     GameSettings(){};
     ~GameSettings();

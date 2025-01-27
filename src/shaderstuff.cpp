@@ -1,4 +1,5 @@
 #include "shaderstuff.h"
+#include "gamesettings.h"
 
 const int XRES = 640;
 const int YRES = 480;
@@ -1742,5 +1743,5 @@ void draw_line_(SDL_Surface *surface, int x1, int y1, int x2, int y2, SDL_Color 
 void init_effects(char* path) {
     circle_init();
     plasma_init(path);
-    srand(time(0));
+    srand(time(NULL));
 }

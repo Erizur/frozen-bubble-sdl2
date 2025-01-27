@@ -11,11 +11,21 @@ void GameSettings::Dispose() {
     this->~GameSettings();
 }
 
+int WriteToIni(dictionary *ini, const char *key, const char *value){
+    int a = iniparser_set(ini, key, value);
+    if (a != 0) {
+        SDL_LogWarn(1, "Could not write %s %s to ini file!", key, value == NULL ? " header" : "");
+    }
+    return a;
+}
+
+#define EvalIniResult(a,ini,k,v) a = WriteToIni(ini, k, v)
+
 void GameSettings::CreateDefaultSettings()
 {
     FILE *setFile;
     char setPath[256];
-    int rval;
+    int rval = 0;
     strcpy(setPath, prefPath);
     strcat(setPath, "settings.ini");
     if((setFile = fopen(setPath, "w")) == NULL)
@@ -28,37 +38,25 @@ void GameSettings::CreateDefaultSettings()
     dictionary *dict;
     dict = iniparser_load(setPath);
 
-    rval = iniparser_set(dict, "GFX", NULL);
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write GFX header to ini file!");
-        goto finish;
-    }
-    rval = iniparser_set(dict, "GFX:Quality", "1");
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write GFX:Quality to ini file!");
-        goto finish;
+    while (rval == 0)
+    {
+        EvalIniResult(rval, dict, "GFX", NULL);
+        EvalIniResult(rval, dict, "GFX:Quality", "1");
+        EvalIniResult(rval, dict, "GFX:LinearScaling", "false");
+        EvalIniResult(rval, dict, "GFX:Fullscreen", "false");
+        EvalIniResult(rval, dict, "GFX:WindowWidth", "640");
+        EvalIniResult(rval, dict, "GFX:WindowHeight", "480");
+
+        EvalIniResult(rval, dict, "Sound", NULL);
+        EvalIniResult(rval, dict, "Sound:EnableMusic", "true");
+        EvalIniResult(rval, dict, "Sound:EnableSFX", "true");
+        EvalIniResult(rval, dict, "Sound:ClassicAF", "false");
+
+        //break while
+        rval = 1;
     }
 
-    rval = iniparser_set(dict, "Sound", NULL);
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write Sound header to ini file!");
-        goto finish;
-    }
-    rval = iniparser_set(dict, "Sound:EnableMusic", "true");
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write Sound:EnableMusic to ini file!");
-        goto finish;
-    }
-    rval = iniparser_set(dict, "Sound:EnableSFX", "true");
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write Sound:EnableSFX to ini file!");
-        goto finish;
-    }
-    rval = iniparser_set(dict, "Sound:ClassicAF", "false");
-    if(rval < 0) {
-        SDL_LogWarn(1, "Could not write Sound:EnableSFX to ini file!");
-        goto finish;
-    }
+    if (rval < 0) goto finish;
 
     if((setFile = fopen(setPath, "w+")) == NULL)
     {
@@ -89,7 +87,13 @@ void GameSettings::ReadSettings()
     }
 
     gfxQuality = iniparser_getint(optDict, "GFX:Quality", 1);
+    linearScaling = iniparser_getboolean(optDict, "GFX:LinearScaling", false);
+    useFullscreen = iniparser_getboolean(optDict, "GFX:Fullscreen", false);
+    windowWidth = iniparser_getint(optDict, "GFX:WindowWidth", 640);
+    windowHeight = iniparser_getint(optDict, "GFX:WindowHeight", 480);
     if (gfxQuality > 3 || gfxQuality < 1) gfxQuality = 3;
+    if (windowWidth < 640 || windowWidth > 9999) windowWidth = 640;
+    if (windowHeight < 480 || windowWidth > 9999) windowHeight = 480;
 
     playMusic = iniparser_getboolean(optDict, "Sound:EnableMusic", true);
     playSfx = iniparser_getboolean(optDict, "Sound:EnableSFX", true);
@@ -121,6 +125,11 @@ void GameSettings::SetValue(const char* option, const char* value)
 
         // gfxQuality needs a hot reload
         iniparser_set(optDict, option, std::to_string(gfxQuality).c_str());
+        return;
+    }
+    else if (strcmp(option, "GFX:Fullscreen") == 0) {
+        useFullscreen = !useFullscreen;
+        iniparser_set(optDict, option, useFullscreen ? "true" : "false");
         return;
     }
 

@@ -28,7 +28,14 @@ FrozenBubble *FrozenBubble::Instance()
 }
 
 FrozenBubble::FrozenBubble() {
-    window = SDL_CreateWindow("Frozen-Bubble", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
+    gameOptions = GameSettings::Instance();
+    gameOptions->ReadSettings();
+
+    SDL_Point resolution = gameOptions->curResolution();
+    Uint32 fullscreen = gameOptions->fullscreenMode() == true ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+
+    window = SDL_CreateWindow("Frozen-Bubble", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, resolution.x, resolution.y, fullscreen);
+    if(gameOptions->linearScaling) SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
 
     if(!window) {
         IsGameQuit = true;
@@ -46,9 +53,6 @@ FrozenBubble::FrozenBubble() {
         IsGameQuit = true;
         std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
     }
-
-    gameOptions = GameSettings::Instance();
-    gameOptions->ReadSettings();
 
     audMixer = AudioMixer::Instance();
 
@@ -125,10 +129,15 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
         case SDL_KEYDOWN:
             if(e->key.repeat) break;
             switch(e->key.keysym.sym) {
+                case SDLK_F12:
+                    gameOptions->SetValue("GFX:Fullscreen", "");
+                    SDL_SetWindowFullscreen(window, gameOptions->fullscreenMode() == true ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+                    break;
                 case SDLK_PAUSE:
                     CallGamePause();
                     break;
             }
+            break;
     }
 
     if (IsGamePause) return;
