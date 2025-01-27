@@ -312,7 +312,7 @@ private:
     bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false, firstRenderDone = false;
 
     bool chainReaction = false;
-    int timeLeft = 0, dangerZone = 12;
+    int timeLeft = 0, curLevel = 1;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
@@ -330,6 +330,8 @@ private:
     void CheckGameState(BubbleArray &bArray);
 
     void DoFrozenAnimation(BubbleArray &bArray, int &waitTime);
+
+    void ReloadGame(int level);
 };
 
 #endif // BUBBLEGAME_H

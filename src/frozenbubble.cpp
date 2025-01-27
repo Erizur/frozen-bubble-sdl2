@@ -110,7 +110,8 @@ uint8_t FrozenBubble::RunForEver()
             SDL_Delay(frametime - elapsed);
         }
     }
-    if(addictedTime != 0) printf("Addicted for %s, %d bubbles were launched.", formatTime(addictedTime), totalBubbles);
+    if (startTime != 0) addictedTime += SDL_GetTicks() - startTime;
+    if(addictedTime != 0) printf("Addicted for %s, %d bubbles were launched.", formatTime(addictedTime/1000), totalBubbles);
     //SDL_Quit(); causes a segfault, i don't know if this is intended
     return 0;
 }

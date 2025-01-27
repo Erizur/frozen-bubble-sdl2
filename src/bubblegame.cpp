@@ -272,7 +272,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
     }
 
     LoadLevelset(DATA_DIR "/data/levels");
-    LoadLevel(1);
+    LoadLevel(curLevel);
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
@@ -280,10 +280,41 @@ void BubbleGame::NewGame(SetupSettings setup) {
     ChooseFirstBubble(bubbleArrays[0]);
 }
 
+void RemoveArray(BubbleArray &bArray) {
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+        bArray.bubbleMap[i].clear();
+    }
+}
+
+void BubbleGame::ReloadGame(int level) {
+    SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
+
+    TransitionManager::Instance()->DoSnipIn(rend);
+    firstRenderDone = false;
+
+    gameFinish = gameWon = gameLost = false;
+
+    if (currentSettings.playerCount == 1){
+        RemoveArray(bubbleArrays[0]);
+        bubbleArrays[0].penguinSprite.PlayAnimation(0);
+        bubbleArrays[0].shooterSprite.angle = M_PI/2.;
+        bubbleArrays[0].bubbleOffset = {190, 51};
+        bubbleArrays[0].topLimit = 51;
+        bubbleArrays[0].numSeparators = 0;
+        bubbleArrays[0].turnsToCompress = 9;
+        bubbleArrays[0].dangerZone = 12;
+        SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
+    }
+
+    LoadLevel(level);
+    ChooseFirstBubble(bubbleArrays[0]);
+}
+
 void BubbleGame::LaunchBubble(BubbleArray &bArray) {
     audMixer->PlaySFX("launch");
     singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
     PickNextBubble(bArray);
+    FrozenBubble::Instance()->totalBubbles++;
 }
 
 void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
@@ -682,6 +713,11 @@ void BubbleGame::HandleInput(SDL_Event *e) {
                         audMixer->PlayMusic("main1p");
                     }
                     else audMixer->MuteAll();
+                    break;
+                case SDLK_RETURN:
+                    if (!gameFinish || (gameFinish && singleBubbles.size() > 0)) break;
+                    if (gameWon) ReloadGame(++curLevel);
+                    else if (gameLost) ReloadGame(curLevel);
                     break;
             }
             break;
