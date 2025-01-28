@@ -14,12 +14,14 @@
 
 #pragma region "BubbleGame Defines"
 #define TIME_APPEARS_NEW_ROOT_MP 11
-#define TIME_HURRY_WARN_MP 250
-#define TIME_HURRY_MAX_MP 375
+#define TIME_HURRY_WARN_MP 250 * 2
+#define TIME_HURRY_MAX_MP 375 * 2
 
 #define TIME_APPEARS_NEW_ROOT 8
-#define TIME_HURRY_WARN 400
-#define TIME_HURRY_MAX 525
+#define TIME_HURRY_WARN 400 * 2
+#define TIME_HURRY_MAX 525 * 2
+
+#define HURRY_WARN_FC (int)(28 * 3.6)
 
 // frame count for animations
 #define PENGUIN_HANDLEFC 71
@@ -43,6 +45,10 @@
 #define COMPRESSOR_OFFSET 28
 #define FREEFALL_CONSTANT 0.5
 #define FROZEN_FRAMEWAIT 1
+
+#define PRELIGHT_SLOW 45
+#define PRELIGHT_FAST 10
+#define PRELIGHT_FRAMEWAIT 3
 
 #define SCREEN_CENTER_X 640/2
 #define SCREEN_CENTER_Y 480/2
@@ -211,10 +217,12 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, frozenWait = FROZEN_FRAMEWAIT;
+    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, 
+        frozenWait = FROZEN_FRAMEWAIT, waitPrelight = PRELIGHT_SLOW, prelightTime = waitPrelight, framePrelight = PRELIGHT_FRAMEWAIT, hurryTimer = 0, warnTimer = 0;
     bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
 
-    SDL_Rect compressorRct, lGfxShooterRct, curLaunchRct, nextBubbleRct, onTopRct, frozenBottomRct;
+    SDL_Rect compressorRct, lGfxShooterRct, curLaunchRct, nextBubbleRct, onTopRct, frozenBottomRct, hurryRct;
+    SDL_Texture *hurryTexture;
 
     std::vector<int> remainingBubbles() {
         std::vector<int> a;
@@ -277,15 +285,18 @@ public:
     ~BubbleGame();
 
     void Render(void);
+    void RenderPaused(void);
     void NewGame(SetupSettings setup);
     void HandleInput(SDL_Event *e);
     void UpdatePenguin(BubbleArray &bArray);
 
     void LoadLevelset(const char *path);
     void LoadLevel(int id);
+
+    bool playedPause = false;
 private:
     const SDL_Renderer *renderer;
-    SDL_Texture *background;
+    SDL_Texture *background, *pauseBackground;
 
     SDL_Texture *imgColorblindBubbles[BUBBLE_STYLES];
     SDL_Texture *imgBubbles[BUBBLE_STYLES];
@@ -312,7 +323,7 @@ private:
     bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false, firstRenderDone = false;
 
     bool chainReaction = false;
-    int timeLeft = 0, curLevel = 1;
+    int timeLeft = 0, alertColumn = 0, curLevel = 1, pauseFrame = 0, nextPauseUpd = 2;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
@@ -330,7 +341,9 @@ private:
     void CheckGameState(BubbleArray &bArray);
 
     void DoFrozenAnimation(BubbleArray &bArray, int &waitTime);
+    void DoPrelightAnimation(BubbleArray &bArray, int &waitTime);
 
+    void RandomLevel(BubbleArray &bArray);
     void ReloadGame(int level);
 };
 

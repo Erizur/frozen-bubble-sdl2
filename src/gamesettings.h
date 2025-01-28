@@ -7,6 +7,10 @@
 #include <mutex>
 #include <string>
 
+struct PlayerKeys {
+    SDL_Scancode left, right, fire, center;
+};
+
 class GameSettings final
 {
 public:

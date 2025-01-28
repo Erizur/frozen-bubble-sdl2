@@ -14,7 +14,7 @@ class AudioMixer final
 public:
     void PlayMusic(const char *track);
     void PlaySFX(const char *sfx);
-
+    void PauseMusic(bool enable = false);
     void MuteAll(bool enable = false);
     bool IsHalted() { return haltedMixer; };
 

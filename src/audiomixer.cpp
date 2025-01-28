@@ -80,6 +80,11 @@ void AudioMixer::PlaySFX(const char *sfx)
     if (Mix_PlayChannel(-1, GetSFX(sfx), 0) < 0) SDL_LogError(1, "Could not play sound because of: %s", SDL_GetError());
 }
 
+void AudioMixer::PauseMusic(bool enable){
+    if (enable == true) Mix_ResumeMusic();
+    else Mix_PauseMusic();
+}
+
 void AudioMixer::MuteAll(bool enable){
     if(enable == true) haltedMixer = false;
     else {

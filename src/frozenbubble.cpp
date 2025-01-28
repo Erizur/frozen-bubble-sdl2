@@ -106,6 +106,13 @@ uint8_t FrozenBubble::RunForEver()
             else if (currentState == MainGame) mainGame->Render();
             SDL_RenderPresent(renderer);
         }
+        else {
+            if (currentState == MainGame){
+                SDL_RenderClear(renderer);
+                mainGame->RenderPaused();
+                SDL_RenderPresent(renderer);
+            }
+        }
         if(elapsed < frametime) {
             SDL_Delay(frametime - elapsed);
         }
@@ -136,6 +143,9 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
                     break;
                 case SDLK_PAUSE:
                     CallGamePause();
+                    if (currentState == MainGame) {
+                        if (!mainGame->playedPause) mainGame->playedPause = false;
+                    }
                     break;
             }
             break;

@@ -131,6 +131,11 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
         imgMiniBubbleStick[i] = IMG_LoadTexture(rend, path);
     }
 
+    for (int i = 0; i < 35; i++) {
+        sprintf(path, DATA_DIR "/gfx/pause_%04d.png", i);
+        pausePenguin[i] = IMG_LoadTexture(rend, path);
+    }
+
     imgBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose.png");
     imgMiniBubbleFrozen = IMG_LoadTexture(rend, DATA_DIR "/gfx/balls/bubble_lose-mini.png");
 
@@ -152,6 +157,8 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
 
     soloStatePanels[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/lose_panel.png");
     soloStatePanels[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_1player.png");
+
+    pauseBackground = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_paused.png");
 }
 
 BubbleGame::~BubbleGame() {
@@ -236,6 +243,27 @@ void BubbleGame::LoadLevel(int id){
     }
 }
 
+void BubbleGame::RandomLevel(BubbleArray &bArray){
+    int bubbleSize = 32;
+    int initBubbleY = (int)(bubbleSize / 1.15);
+
+    SDL_Point &offset = bArray.bubbleOffset;
+    std::array<std::vector<Bubble>, 13> &bubbleMap = bArray.bubbleMap;
+
+    int start = ranrange(0, 1);
+    int untilend = ((start == 0 ? 13 : 14) / 2) - 1;
+    for (size_t i = start; i < bArray.bubbleMap.size() - (start == 0 ? 0 : 1); i++)
+    {
+        int size = i % 2 == 0 ? 8 : 7;
+        int smallerSep = i % 2 == 0 ? 0 : bubbleSize / 2;
+        for (int j = 0; j < size; j++)
+        {
+            int k = start == 0 ? i : i - 1;
+            bubbleMap[k].push_back(Bubble{(int)i < untilend ? ranrange(0, 7) : -1, {(smallerSep + bubbleSize * ((int)j)) + offset.x, (initBubbleY * ((int)k)) + offset.y}});
+        }
+    }
+}
+
 void SetupGameMetrics(BubbleArray &bArray, int playerCount, bool lowGfx){
     bool onePlayer = playerCount == 1;
 
@@ -255,6 +283,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
     currentSettings = setup;
 
     lowGfx = GameSettings::Instance()->gfxLevel() > 2;
+    char path[256];
 
     if (currentSettings.playerCount == 1){
         background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
@@ -262,11 +291,14 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
         bubbleArrays[0].shooterSprite.rect = {SCREEN_CENTER_X - 50, 480 - 123, 100, 100};
         bubbleArrays[0].bubbleOffset = {190, 51};
-        bubbleArrays[0].leftLimit = (640 / 2) - 128;
-        bubbleArrays[0].rightLimit = (640 / 2) + 128;
+        bubbleArrays[0].leftLimit = SCREEN_CENTER_X - 128;
+        bubbleArrays[0].rightLimit = SCREEN_CENTER_X + 128;
         bubbleArrays[0].topLimit = 51;
+        bubbleArrays[0].hurryRct = {SCREEN_CENTER_X - 122, 480 - 248, 244, 102};
         bubbleArrays[0].numSeparators = 0;
         bubbleArrays[0].playerAssigned = 0;
+        sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p1");
+        bubbleArrays[0].hurryTexture = IMG_LoadTexture(rend, path);
         audMixer->PlayMusic("main1p");
         SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
     }
@@ -315,10 +347,26 @@ void BubbleGame::LaunchBubble(BubbleArray &bArray) {
     singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
     PickNextBubble(bArray);
     FrozenBubble::Instance()->totalBubbles++;
+    bArray.hurryTimer = 0;
 }
 
 void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
     if (gameFinish) return;
+
+    if (bArray.hurryTimer >= TIME_HURRY_WARN) {
+        if (bArray.warnTimer >= HURRY_WARN_FC / 2){
+            if(bArray.warnTimer == HURRY_WARN_FC / 2) audMixer->PlaySFX("hurry");
+            SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), bArray.hurryTexture, nullptr, &bArray.hurryRct);
+            if (bArray.warnTimer >= HURRY_WARN_FC) {
+                bArray.warnTimer = 0;
+            }
+        }
+        if (bArray.hurryTimer >= TIME_HURRY_MAX) {
+            bArray.shooterAction = true;
+        }
+        bArray.warnTimer++;
+    }
+    bArray.hurryTimer++;
 
     float &angle = bArray.shooterSprite.angle;
     Penguin &penguin = bArray.penguinSprite;
@@ -578,9 +626,47 @@ void BubbleGame::DoFrozenAnimation(BubbleArray &bArray, int &waitTime){
     else waitTime--;
 }
 
+void BubbleGame::DoPrelightAnimation(BubbleArray &bArray, int &waitTime){
+    if (waitTime <= 0) {
+        if(bArray.framePrelight <= 0) {
+            for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+                if (lowGfx && i > 0) continue;
+                for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+                    if (j == (size_t)alertColumn) {
+                        bArray.bubbleMap[i][j].shining = true;
+                    }
+                    else {
+                        bArray.bubbleMap[i][j].shining = false;
+                        continue;
+                    }
+                }
+            }
+            alertColumn++;
+            if (alertColumn > 8) {
+                waitTime = bArray.waitPrelight;
+                alertColumn = 0;
+            }
+            bArray.framePrelight = PRELIGHT_FRAMEWAIT;
+        }
+        else bArray.framePrelight--;
+    }
+    else waitTime--;
+}
+
+void ResetPrelight(BubbleArray &bArray) {
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
+        for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
+            bArray.bubbleMap[i][j].shining = false;
+        }
+    }
+}
+
 void BubbleGame::CheckGameState(BubbleArray &bArray) {
     bArray.turnsToCompress--;
+    if (bArray.turnsToCompress == 1) bArray.waitPrelight = PRELIGHT_FAST;
     if (bArray.turnsToCompress == 0) {
+        ResetPrelight(bArray);
+        bArray.waitPrelight = PRELIGHT_SLOW;
         bArray.turnsToCompress = 9;
         bArray.dangerZone--;
         bArray.numSeparators++;
@@ -606,6 +692,11 @@ void BubbleGame::CheckGameState(BubbleArray &bArray) {
 void BubbleGame::Render() {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
     SDL_RenderCopy(rend, background, nullptr, nullptr);
+
+    if(playedPause) {
+        audMixer->PauseMusic(true);
+        playedPause = false;
+    }
     
     if(currentSettings.playerCount == 1) {
         BubbleArray &curArray = bubbleArrays[0];
@@ -626,6 +717,9 @@ void BubbleGame::Render() {
         }
         SDL_RenderCopy(rend, compressorTexture, nullptr, &curArray.compressorRct);
 
+        if (curArray.turnsToCompress <= 2) {
+            DoPrelightAnimation(curArray, curArray.prelightTime);
+        }
         for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
 
         if(gameFinish) {
@@ -685,6 +779,30 @@ void BubbleGame::Render() {
     }
 }
 
+void BubbleGame::RenderPaused() {
+    SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
+    SDL_RenderCopy(rend, pauseBackground, nullptr, nullptr);
+
+    if(!playedPause) {
+        audMixer->PauseMusic();
+        audMixer->PlaySFX("pause");
+        playedPause = true;
+        pauseFrame = 0;
+    }
+
+    if (nextPauseUpd <= 0){
+        pauseFrame++;
+        nextPauseUpd = 2;
+        if(pauseFrame >= 34) {
+            pauseFrame = 12;
+        }
+    }
+    else nextPauseUpd--;
+
+    SDL_Rect pauseRct = {SCREEN_CENTER_X - 95, SCREEN_CENTER_Y - 72, 190, 143};
+    SDL_RenderCopy(rend, pausePenguin[pauseFrame], nullptr, &pauseRct);
+}
+
 void BubbleGame::HandleInput(SDL_Event *e) {
     switch(e->type) {
         case SDL_KEYDOWN:
@@ -692,17 +810,6 @@ void BubbleGame::HandleInput(SDL_Event *e) {
             switch(e->key.keysym.sym) {
                 case SDLK_UP:
                     if (gameFinish == false) bubbleArrays[0].shooterAction = true;
-                    break;
-                case SDLK_PAUSE:
-                    while(1) {
-                        if (SDL_PollEvent(e)) {
-                            if(e->type == SDL_KEYDOWN) break;
-                            else if (e->type == SDL_QUIT) {
-                                FrozenBubble::Instance()->CallGameQuit();
-                                break;
-                            }
-                        }
-                    }
                     break;
                 case SDLK_ESCAPE:
                     FrozenBubble::Instance()->CallGameQuit();
