@@ -17,16 +17,20 @@ endif()
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image QUIET)
 find_package(SDL2_mixer QUIET)
+find_package(SDL2_pango QUIET)
 
 find_package(iniparser REQUIRED static)
 
-if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND)
+if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_pango_FOUND)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND AND NOT SDL2_image_FOUND)
         pkg_check_modules(SDL2_image IMPORTED_TARGET SDL2_image)
     endif()
     if(PkgConfig_FOUND AND NOT SDL2_mixer_FOUND)
         pkg_check_modules(SDL2_mixer IMPORTED_TARGET SDL2_mixer)
+    endif()
+    if(PkgConfig_FOUND AND NOT SDL2_pango_FOUND)
+        pkg_check_modules(SDL2_pango IMPORTED_TARGET SDL2_pango)
     endif()
 endif()
 
@@ -36,6 +40,10 @@ endif()
 
 if(NOT SDL2_mixer_FOUND)
     message(FATAL_ERROR "SDL2_mixer not found")
+endif()
+
+if(NOT SDL2_pango_FOUND)
+    message(FATAL_ERROR "SDL2_pango not found")
 endif()
 
 if(UNIX OR APPLE)
@@ -59,6 +67,7 @@ add_executable(frozen-bubble
     src/shaderstuff.cpp
     src/bubblegame.cpp
     src/transitionmanager.cpp
+    src/pangotext.cpp
     ${RES_FILES}
 )
 
