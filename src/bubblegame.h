@@ -21,7 +21,7 @@
 #define TIME_HURRY_WARN 400 * 2
 #define TIME_HURRY_MAX 525 * 2
 
-#define HURRY_WARN_FC (int)(28 * 3.6)
+#define HURRY_WARN_FC 125
 
 // frame count for animations
 #define PENGUIN_HANDLEFC 71
@@ -324,6 +324,7 @@ private:
 
     bool chainReaction = false;
     int timeLeft = 0, alertColumn = 0, curLevel = 1, pauseFrame = 0, nextPauseUpd = 2;
+    Uint32 timePaused = 0;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;

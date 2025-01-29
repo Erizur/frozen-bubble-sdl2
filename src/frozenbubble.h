@@ -22,7 +22,8 @@ enum GameState {
 class FrozenBubble
 {
 public:
-    int startTime = 0, totalBubbles = 0;
+    int totalBubbles = 0;
+    Uint32 startTime = 0;
     void CallGameQuit() { IsGameQuit = true; };
     void CallGamePause() { IsGamePause = !IsGamePause; };
 

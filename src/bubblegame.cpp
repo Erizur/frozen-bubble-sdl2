@@ -354,17 +354,17 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
     if (gameFinish) return;
 
     if (bArray.hurryTimer >= TIME_HURRY_WARN) {
-        if (bArray.warnTimer >= HURRY_WARN_FC / 2){
-            if(bArray.warnTimer == HURRY_WARN_FC / 2) audMixer->PlaySFX("hurry");
+        if (bArray.warnTimer <= HURRY_WARN_FC / 2){
+            if(bArray.warnTimer == 0) audMixer->PlaySFX("hurry");
             SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), bArray.hurryTexture, nullptr, &bArray.hurryRct);
-            if (bArray.warnTimer >= HURRY_WARN_FC) {
-                bArray.warnTimer = 0;
-            }
+        }
+        bArray.warnTimer++;
+        if (bArray.warnTimer > HURRY_WARN_FC) {
+            bArray.warnTimer = 0;
         }
         if (bArray.hurryTimer >= TIME_HURRY_MAX) {
             bArray.shooterAction = true;
         }
-        bArray.warnTimer++;
     }
     bArray.hurryTimer++;
 
@@ -696,6 +696,7 @@ void BubbleGame::Render() {
     if(playedPause) {
         audMixer->PauseMusic(true);
         playedPause = false;
+        FrozenBubble::Instance()->startTime += SDL_GetTicks() - timePaused;
     }
     
     if(currentSettings.playerCount == 1) {
@@ -801,6 +802,8 @@ void BubbleGame::RenderPaused() {
 
     SDL_Rect pauseRct = {SCREEN_CENTER_X - 95, SCREEN_CENTER_Y - 72, 190, 143};
     SDL_RenderCopy(rend, pausePenguin[pauseFrame], nullptr, &pauseRct);
+
+    timePaused = SDL_GetTicks();
 }
 
 void BubbleGame::HandleInput(SDL_Event *e) {
