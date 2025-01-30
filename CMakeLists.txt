@@ -94,5 +94,5 @@ target_link_libraries(frozen-bubble PRIVATE
     iniparser-static
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_image>, $<TARGET_NAME_IF_EXISTS:SDL2_image::SDL2_image>>
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_mixer>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_mixer>>
-    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_ttf>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_ttf>>
+    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_ttf>, $<TARGET_NAME_IF_EXISTS:SDL2_ttf::SDL2_ttf>>
 )

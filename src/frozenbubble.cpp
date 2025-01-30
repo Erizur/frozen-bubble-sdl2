@@ -54,6 +54,14 @@ FrozenBubble::FrozenBubble() {
         std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
     }
 
+    if( TTF_Init() == -1 )
+    {
+        IsGameQuit = true;
+        std::cout << "Failed to initialise SDL_ttf: " << SDL_GetError() << std::endl;
+    }
+
+    globalFont = TTF_OpenFont(DATA_DIR "/gfx/DroidSans.ttf", 11);
+
     audMixer = AudioMixer::Instance();
 
     init_effects((char*)DATA_DIR);
@@ -74,6 +82,11 @@ FrozenBubble::~FrozenBubble() {
 
     audMixer->Dispose();
     gameOptions->Dispose();
+
+    TTF_Quit();
+    IMG_Quit();
+    Mix_Quit();
+    SDL_Quit();
 }
 
 uint8_t FrozenBubble::RunForEver()

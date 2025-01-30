@@ -12,16 +12,19 @@
 #define WINDOW_H 480
 #define SURF_FORMAT SDL_PIXELFORMAT_ARGB8888
 
-class PangoText final
+class TTFText final
 {
 public:
+    void LoadFont(const char *path, int size);
+
     void AddText(SDL_Renderer *rend, const char *txt);
     void RemoveText(SDL_Renderer *rend, const char *txt);
     void Dispose();
 private:
-    PangoText();
-    ~PangoText();
+    TTFText();
+    ~TTFText();
 
+    TTF_Font *textFont = nullptr;
     SDL_Surface *sfc = nullptr;
     SDL_Texture *outTexture = nullptr;
 };

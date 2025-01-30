@@ -2,6 +2,7 @@
 #define FROZENBUBBLE_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdint.h>
 #include <string>
 #include <iostream>
@@ -11,6 +12,8 @@
 
 #include "mainmenu.h"
 #include "bubblegame.h"
+
+#include "ttftext.h"
 
 enum GameState {
     TitleScreen = 0,
@@ -44,6 +47,8 @@ private:
 
     MainMenu *mainMenu;
     BubbleGame *mainGame;
+
+    TTFText menuText;
 
     void HandleInput(SDL_Event *e);
 
