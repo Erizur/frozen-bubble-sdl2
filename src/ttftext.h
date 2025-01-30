@@ -2,7 +2,7 @@
 #define PANGOTEXT_H
 
 #include <SDL2/SDL.h>
-#include <SDL2_pango.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <string>
 

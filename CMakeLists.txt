@@ -17,11 +17,11 @@ endif()
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image QUIET)
 find_package(SDL2_mixer QUIET)
-find_package(SDL2_pango QUIET)
+find_package(SDL2_ttf QUIET)
 
 find_package(iniparser REQUIRED static)
 
-if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_pango_FOUND)
+if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_ttf_FOUND)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND AND NOT SDL2_image_FOUND)
         pkg_check_modules(SDL2_image IMPORTED_TARGET SDL2_image)
@@ -29,8 +29,8 @@ if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_pango_FOUND)
     if(PkgConfig_FOUND AND NOT SDL2_mixer_FOUND)
         pkg_check_modules(SDL2_mixer IMPORTED_TARGET SDL2_mixer)
     endif()
-    if(PkgConfig_FOUND AND NOT SDL2_pango_FOUND)
-        pkg_check_modules(SDL2_pango IMPORTED_TARGET SDL2_pango)
+    if(PkgConfig_FOUND AND NOT SDL2_ttf_FOUND)
+        pkg_check_modules(SDL2_ttf IMPORTED_TARGET SDL2_ttf)
     endif()
 endif()
 
@@ -42,8 +42,8 @@ if(NOT SDL2_mixer_FOUND)
     message(FATAL_ERROR "SDL2_mixer not found")
 endif()
 
-if(NOT SDL2_pango_FOUND)
-    message(FATAL_ERROR "SDL2_pango not found")
+if(NOT SDL2_ttf_FOUND)
+    message(FATAL_ERROR "SDL2_ttf not found")
 endif()
 
 if(UNIX OR APPLE)
@@ -67,7 +67,7 @@ add_executable(frozen-bubble
     src/shaderstuff.cpp
     src/bubblegame.cpp
     src/transitionmanager.cpp
-    src/pangotext.cpp
+    src/ttftext.cpp
     ${RES_FILES}
 )
 
@@ -85,6 +85,7 @@ target_include_directories(frozen-bubble
     PRIVATE ${SDL2_INCLUDE_DIRS}
     PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS}
     PRIVATE ${SDL2_MIXER_INCLUDE_DIRS}
+    PRIVATE ${SDL2_TTF_INCLUDE_DIRS}
 )
 
 target_link_libraries(frozen-bubble PRIVATE
@@ -93,4 +94,5 @@ target_link_libraries(frozen-bubble PRIVATE
     iniparser-static
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_image>, $<TARGET_NAME_IF_EXISTS:SDL2_image::SDL2_image>>
     $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_mixer>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_mixer>>
+    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_ttf>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_ttf>>
 )
