@@ -130,7 +130,7 @@ void MenuButton::Pressed(void *parent)
 {
     //oh boy
     if(buttonName == "graphics") GameSettings::Instance()->SetValue("GFX:Quality", "");
-    if(buttonName == "1pgame") ((MainMenu *)parent)->SetupNewGame(1);
+    if(buttonName == "1pgame") ((MainMenu *)parent)->ShowPanel(0);
 }
 
 void MenuButton::Activate()

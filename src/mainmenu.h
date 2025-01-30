@@ -19,6 +19,8 @@
 #define BLINK_FRAMES 5
 #define BLINK_SLOWDOWN 30
 
+#define SP_OPT 4
+
 class MainMenu final
 {
 public:
@@ -29,6 +31,7 @@ public:
     void RefreshCandy();
     void HandleInput(SDL_Event *e);
     void SetupNewGame(int mode);
+    void ShowPanel(int which);
 private:
     const SDL_Renderer *renderer;
     std::vector<MenuButton> buttons;
@@ -67,6 +70,20 @@ private:
     void BlinkRender();
     void BannerRender();
     void CandyRender();
+
+    //singleplayer panel
+    SDL_Texture *singlePanelBG;
+    SDL_Texture *singleButtonAct, *singleButtonIdle;
+    SDL_Surface *activeSPButtons[SP_OPT];
+    SDL_Texture *idleSPButtons[SP_OPT];
+    int activeSPIdx = 0;
+    bool showingSPPanel = false;
+    const struct spPanelEntry {
+        std::string option;
+    } spOptions[SP_OPT] = {"play_all_levels", "pick_start_level", "play_random_levels", "multiplayer_training"};
+    
+    SDL_Rect spPanelRct = {(640/2) - (341/2), (480/2) - (280/2), 341, 280};
+    void SPPanelRender();
 };
 
 #endif // MAINMENU_H

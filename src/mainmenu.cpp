@@ -74,6 +74,16 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     blink_purple_left = {522, 356, GetSize(blinkPurpleL).x, GetSize(blinkPurpleL).y};
     blink_purple_right = {535, 356, GetSize(blinkPurpleR).x, GetSize(blinkPurpleR).y};
 
+    for (int i = 0; i < SP_OPT; i++) {
+        std::string idlePath = std::string(DATA_DIR) + "/gfx/menu/txt_" + spOptions[i].option + "_outlined_text.png";
+        std::string activePath = std::string(DATA_DIR) + "/gfx/menu/txt_" + spOptions[i].option + "_text.png";
+        idleSPButtons[i] = IMG_LoadTexture(rend, idlePath.c_str());
+        activeSPButtons[i] = IMG_Load(activePath.c_str());
+    }
+    singlePanelBG = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/1p_panel.png");
+    singleButtonAct = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/txt_menu_1p_over.png");
+    singleButtonIdle = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/txt_menu_1p_off.png");
+
     InitCandy();
 
     buttons[active_button_index].Activate();
@@ -159,6 +169,11 @@ void MainMenu::HandleInput(SDL_Event *e){
                     if(SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LCTRL] == SDL_PRESSED) RefreshCandy();
                     break;
                 case SDLK_ESCAPE:
+                    if (showingSPPanel) {
+                        AudioMixer::Instance()->PlaySFX("cancel");
+                        showingSPPanel = false;
+                        break;
+                    } 
                     FrozenBubble::Instance()->CallGameQuit();
                     break;
                 case SDLK_F11: // mute / unpause audio
@@ -182,6 +197,7 @@ void MainMenu::Render(void) {
     BannerRender();
     BlinkRender();
     CandyRender();
+    SPPanelRender();
 }
 
 void MainMenu::BannerRender() {
@@ -290,13 +306,39 @@ void MainMenu::CandyRender() {
     candyIndex++;
 }
 
+void MainMenu::SPPanelRender() {
+    if (!showingSPPanel) return;
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singlePanelBG, nullptr, &spPanelRct);
+    for (int i = 0; i < SP_OPT; i++){
+        SDL_Rect entryRct = {(640/2)-(298/2), ((480/2)-86)+(41 * (i + 1)), 298, 37};
+        if(i == activeSPIdx) SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonAct, nullptr, &entryRct);
+        else SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonIdle, nullptr, &entryRct);
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), idleSPButtons[i], nullptr, &entryRct);
+    }
+}
+
 void MainMenu::press() {
     AudioMixer::Instance()->PlaySFX("menu_selected");
+
+    if (showingSPPanel) {
+        if(activeSPIdx == 0) SetupNewGame(1);
+        return;
+    }
+
     buttons[active_button_index].Pressed(this);
 }
 
 void MainMenu::down()
 {
+    AudioMixer::Instance()->PlaySFX("menu_change");
+
+    if (showingSPPanel) {
+        if (activeSPIdx == SP_OPT - 1) activeSPIdx = 0;
+        else activeSPIdx++;
+        return;
+    }
+
     buttons[active_button_index].Deactivate();
     if(active_button_index == (buttons.size() - 1)) {
         active_button_index = 0;
@@ -305,12 +347,18 @@ void MainMenu::down()
     }
 
     buttons[active_button_index].Activate();
-
-    AudioMixer::Instance()->PlaySFX("menu_change");
 }
 
 void MainMenu::up()
 {
+    AudioMixer::Instance()->PlaySFX("menu_change");
+
+    if (showingSPPanel) {
+        if (activeSPIdx == 0) activeSPIdx = SP_OPT - 1;
+        else activeSPIdx--;
+        return;
+    }
+
     buttons[active_button_index].Deactivate();
 
     if(active_button_index == 0) {
@@ -320,8 +368,16 @@ void MainMenu::up()
     }
 
     buttons[active_button_index].Activate();
+}
 
-    AudioMixer::Instance()->PlaySFX("menu_change");
+void MainMenu::ShowPanel(int which) {
+    switch (which){
+        case 0:
+            showingSPPanel = true;
+            break;
+        default:
+            break;
+    }
 }
 
 void MainMenu::SetupNewGame(int mode) {
