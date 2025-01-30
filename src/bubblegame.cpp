@@ -63,12 +63,12 @@ struct SingleBubble {
             if (pos.x < leftLimit) {
                 AudioMixer::Instance()->PlaySFX("rebound");
                 pos.x = 2 * leftLimit - pos.x;
-                direction -= 2 * (direction-M_PI/2);
+                direction -= 2 * (direction-PI/2);
             }
             if (pos.x > rightLimit - bubbleSize) {
                 AudioMixer::Instance()->PlaySFX("rebound");
                 pos.x = 2 * (rightLimit - bubbleSize) - pos.x;
-                direction += 2 * (M_PI/2-direction);
+                direction += 2 * (PI/2-direction);
             }
         }
         else if (falling) {
@@ -159,10 +159,15 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
     soloStatePanels[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_1player.png");
 
     pauseBackground = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_paused.png");
+
+    inGameText.LoadFont(DATA_DIR "/gfx/DroidSans.ttf", 20);
+    inGameText.UpdateAlignment(TTF_WRAPPED_ALIGN_CENTER);
+    inGameText.UpdateColor({255, 255, 255, 255}, {0, 0, 0, 255});
 }
 
 BubbleGame::~BubbleGame() {
     SDL_DestroyTexture(background);
+    SDL_DestroyTexture(pauseBackground);
     for (int i = 0; i < BUBBLE_STYLES; i++)  {
         SDL_DestroyTexture(imgBubbles[i]);
         SDL_DestroyTexture(imgColorblindBubbles[i]);
@@ -241,6 +246,11 @@ void BubbleGame::LoadLevel(int id){
             for (int j = 0; j < (i % 2 == 0 ? 7 : 8); j++) bubbleMap[10 + (i - 1)].push_back({-1, {(smallerSep + bubbleSize * j) + offset.x, (initBubbleY * (9 + i)) + offset.y}});
         }
     }
+
+    char lvnm[64];
+    sprintf(lvnm, "Level %i", id);
+    inGameText.UpdateText(renderer, lvnm, 0);
+    inGameText.UpdatePosition({75 - (inGameText.Coords()->w / 2), 105});
 }
 
 void BubbleGame::RandomLevel(BubbleArray &bArray){
@@ -262,6 +272,9 @@ void BubbleGame::RandomLevel(BubbleArray &bArray){
             bubbleMap[k].push_back(Bubble{(int)i < untilend ? ranrange(0, 7) : -1, {(smallerSep + bubbleSize * ((int)j)) + offset.x, (initBubbleY * ((int)k)) + offset.y}});
         }
     }
+
+    inGameText.UpdateText(renderer, "Random level", 0);
+    inGameText.UpdatePosition({(inGameText.Coords()->w / 2) + 10, 105});
 }
 
 void SetupGameMetrics(BubbleArray &bArray, int playerCount, bool lowGfx){
@@ -294,7 +307,7 @@ void BubbleGame::NewGame(SetupSettings setup) {
         bubbleArrays[0].leftLimit = SCREEN_CENTER_X - 128;
         bubbleArrays[0].rightLimit = SCREEN_CENTER_X + 128;
         bubbleArrays[0].topLimit = 51;
-        bubbleArrays[0].hurryRct = {SCREEN_CENTER_X - 122, 480 - 248, 244, 102};
+        bubbleArrays[0].hurryRct = {SCREEN_CENTER_X - 122, 480 - 214, 244, 102};
         bubbleArrays[0].numSeparators = 0;
         bubbleArrays[0].playerAssigned = 0;
         sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p1");
@@ -329,7 +342,7 @@ void BubbleGame::ReloadGame(int level) {
     if (currentSettings.playerCount == 1){
         RemoveArray(bubbleArrays[0]);
         bubbleArrays[0].penguinSprite.PlayAnimation(0);
-        bubbleArrays[0].shooterSprite.angle = M_PI/2.;
+        bubbleArrays[0].shooterSprite.angle = PI/2.;
         bubbleArrays[0].bubbleOffset = {190, 51};
         bubbleArrays[0].topLimit = 51;
         bubbleArrays[0].numSeparators = 0;
@@ -386,7 +399,7 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
 
     if (bArray.shooterLeft || bArray.shooterRight || bArray.shooterCenter) {
         if (angle < 0.1) angle = 0.1;
-        if (angle > M_PI-0.1) angle = M_PI-0.1;
+        if (angle > PI-0.1) angle = PI-0.1;
 
         if (bArray.shooterLeft) {
             angle += lowGfx ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
@@ -397,8 +410,8 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
             if(penguin.curAnimation != 1 && (penguin.curAnimation > 7 || penguin.curAnimation < 2)) penguin.PlayAnimation(5);
         }
         else if (bArray.shooterCenter) {
-            if (angle >= M_PI/2 - LAUNCHER_SPEED && angle <= M_PI/2 + LAUNCHER_SPEED) angle = M_PI/2;
-            else angle += (angle < M_PI/2) ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
+            if (angle >= PI/2 - LAUNCHER_SPEED && angle <= PI/2 + LAUNCHER_SPEED) angle = PI/2;
+            else angle += (angle < PI/2) ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
         }
 
         penguin.sleeping = 0;
@@ -611,9 +624,9 @@ void BubbleGame::CheckAirBubbles(BubbleArray &bArray) {
 void BubbleGame::DoFrozenAnimation(BubbleArray &bArray, int &waitTime){
     if (waitTime <= 0) {
         waitTime = FROZEN_FRAMEWAIT;
-        for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
-            for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
-                if (bArray.bubbleMap[i][j].frozen != true) {
+        for (int i = (int)bArray.bubbleMap.size() - 1; i >= 0; i--) {
+            for (int j = (int)bArray.bubbleMap[i].size() - 1; j >= 0; j--) {
+                if (bArray.bubbleMap[i][j].frozen != true && bArray.bubbleMap[i][j].bubbleId != -1) {
                     bArray.bubbleMap[i][j].frozen = true;
                     return;
                 }
@@ -774,6 +787,8 @@ void BubbleGame::Render() {
         }
     }
 
+    SDL_RenderCopy(rend, inGameText.Texture(), nullptr, inGameText.Coords());
+
     if (!firstRenderDone) {
         TransitionManager::Instance()->TakeSnipOut(rend);
         firstRenderDone = true;
@@ -782,14 +797,26 @@ void BubbleGame::Render() {
 
 void BubbleGame::RenderPaused() {
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
-    SDL_RenderCopy(rend, pauseBackground, nullptr, nullptr);
 
     if(!playedPause) {
         audMixer->PauseMusic();
         audMixer->PlaySFX("pause");
         playedPause = true;
         pauseFrame = 0;
+
+        if(prePauseBackground != nullptr) SDL_DestroyTexture(prePauseBackground);
+
+        float w = 0, h = 0;
+        SDL_RenderGetScale(rend, &w, &h);
+        SDL_Surface *sfc = SDL_CreateRGBSurface(0, 640 * w, 480 * h, 32, 0, 0, 0, 0);
+        SDL_RenderReadPixels(rend, NULL, SURF_FORMAT, sfc->pixels, sfc->pitch);
+        prePauseBackground = SDL_CreateTextureFromSurface(rend, sfc);
+        SDL_FreeSurface(sfc);
     }
+
+    SDL_RenderClear(rend);
+    SDL_RenderCopy(rend, prePauseBackground, nullptr, nullptr);
+    SDL_RenderCopy(rend, pauseBackground, nullptr, nullptr);
 
     if (nextPauseUpd <= 0){
         pauseFrame++;

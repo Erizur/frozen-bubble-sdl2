@@ -60,8 +60,6 @@ FrozenBubble::FrozenBubble() {
         std::cout << "Failed to initialise SDL_ttf: " << SDL_GetError() << std::endl;
     }
 
-    globalFont = TTF_OpenFont(DATA_DIR "/gfx/DroidSans.ttf", 11);
-
     audMixer = AudioMixer::Instance();
 
     init_effects((char*)DATA_DIR);
@@ -121,7 +119,6 @@ uint8_t FrozenBubble::RunForEver()
         }
         else {
             if (currentState == MainGame){
-                SDL_RenderClear(renderer);
                 mainGame->RenderPaused();
                 SDL_RenderPresent(renderer);
             }

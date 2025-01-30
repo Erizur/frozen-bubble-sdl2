@@ -1,10 +1,11 @@
 #ifndef BUBBLEGAME_H
 #define BUBBLEGAME_H
 
-#define M_PI 3.1415926535897932384626433832795028841972
+#define PI 3.1415926535897932384626433832795028841972
 
 #include <SDL2/SDL.h>
 #include "shaderstuff.h"
+#include "ttftext.h"
 
 #include <fstream>
 #include <sstream>
@@ -21,7 +22,7 @@
 #define TIME_HURRY_WARN 400 * 2
 #define TIME_HURRY_MAX 525 * 2
 
-#define HURRY_WARN_FC 125
+#define HURRY_WARN_FC 83
 
 // frame count for animations
 #define PENGUIN_HANDLEFC 71
@@ -44,10 +45,10 @@
 
 #define COMPRESSOR_OFFSET 28
 #define FREEFALL_CONSTANT 0.5
-#define FROZEN_FRAMEWAIT 1
+#define FROZEN_FRAMEWAIT 2
 
-#define PRELIGHT_SLOW 45
-#define PRELIGHT_FAST 10
+#define PRELIGHT_SLOW 60
+#define PRELIGHT_FAST 20
 #define PRELIGHT_FRAMEWAIT 3
 
 #define SCREEN_CENTER_X 640/2
@@ -198,11 +199,11 @@ struct Bubble {
 struct Shooter {
     SDL_Texture *texture;
     SDL_Renderer *renderer;
-    float angle = M_PI/2.;
+    float angle = PI/2.;
     SDL_Rect rect = {};
 
     void Render(){
-        SDL_RenderCopyEx(renderer, texture, nullptr, &rect, ((angle*CANON_ROTATIONS/(M_PI/2.) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
+        SDL_RenderCopyEx(renderer, texture, nullptr, &rect, ((int)(angle*CANON_ROTATIONS/(PI/2) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
     }
 };
 
@@ -296,7 +297,7 @@ public:
     bool playedPause = false;
 private:
     const SDL_Renderer *renderer;
-    SDL_Texture *background, *pauseBackground;
+    SDL_Texture *background, *pauseBackground = nullptr, *prePauseBackground = nullptr;
 
     SDL_Texture *imgColorblindBubbles[BUBBLE_STYLES];
     SDL_Texture *imgBubbles[BUBBLE_STYLES];
@@ -328,6 +329,8 @@ private:
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
+
+    TTFText inGameText;
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
     BubbleArray bubbleArrays[5]; //5 custom arrays wtih different players
