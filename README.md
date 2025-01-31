@@ -1,4 +1,6 @@
 # Frozen-Bubble: SDL2
+![fblogo](https://github.com/user-attachments/assets/c68db5c9-7e72-4d19-8e98-c598a3f5e54e)
+
 An ongoing port of the original Frozen-Bubble 2 into a newer C++ codebase using SDL2. I am planning on reimplementing most features from the original Frozen-Bubble 2 into the codebase, but some of them might be out of my knowledge. Feel free to contribute if you want!
 
 Checklist: https://github.com/Erizur/frozen-bubble-sdl2/issues/1
