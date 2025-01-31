@@ -15,9 +15,9 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 endif()
 
 find_package(SDL2 REQUIRED)
-find_package(SDL2_image QUIET)
-find_package(SDL2_mixer QUIET)
-find_package(SDL2_ttf QUIET)
+find_package(SDL2_image REQUIRED)
+find_package(SDL2_mixer REQUIRED)
+find_package(SDL2_ttf REQUIRED)
 
 find_package(iniparser REQUIRED static)
 
