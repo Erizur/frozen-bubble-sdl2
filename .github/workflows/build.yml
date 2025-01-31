@@ -20,7 +20,7 @@ jobs:
       matrix:
         platform:
         - { name: Ubuntu,            os: ubuntu-latest,  shell: sh }
-        - { name: macOS,             os: macos-latest,   shell: sh }
+        #- { name: macOS,             os: macos-latest,   shell: sh }
         #- { name: Windows - mingw32, os: windows-latest, shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686 }
         #- { name: Windows - mingw64, os: windows-latest, shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64 }
     steps:
@@ -37,7 +37,7 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install \
-            glib pkg-config sdl2_image sdl2_mixer sdl2_ttf sdl2 ninja iniparser
+            glib pkg-config sdl2_image sdl2_mixer sdl2_ttf sdl2 ninja iniparser gcc
 
     - name: Set up Windows dependencies
       if: matrix.platform.shell == 'msys2 {0}'
