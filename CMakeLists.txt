@@ -50,6 +50,11 @@ if(UNIX OR APPLE)
     add_subdirectory(server)
 endif()
 
+if(APPLE)
+    include_directories("/opt/homebrew/include")
+    include_directories("/usr/local/include")
+endif()
+
 set(RES_FILES "")
 if(WIN32 OR MINGW)
     set(RES_FILES share/icons/fb.rc)
