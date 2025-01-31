@@ -2,9 +2,9 @@ name: CMake
 
 on:
   push:
-    branches: [ cpp ]
+    branches: [ main ]
   pull_request:
-    branches: [ cpp ]
+    branches: [ main ]
 
 jobs:
   Build:
@@ -21,8 +21,8 @@ jobs:
         platform:
         - { name: Ubuntu,            os: ubuntu-latest,  shell: sh }
         - { name: macOS,             os: macos-latest,   shell: sh }
-        - { name: Windows - mingw32, os: windows-latest, shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686 }
-        - { name: Windows - mingw64, os: windows-latest, shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64 }
+        #- { name: Windows - mingw32, os: windows-latest, shell: 'msys2 {0}', msystem: mingw32, msys-env: mingw-w64-i686 }
+        #- { name: Windows - mingw64, os: windows-latest, shell: 'msys2 {0}', msystem: mingw64, msys-env: mingw-w64-x86_64 }
     steps:
     - uses: actions/checkout@v3
 
@@ -31,13 +31,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install \
-            libsdl2-image-dev libsdl2-mixer-dev libsdl2-dev ninja-build
+            libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libsdl2-dev libiniparser-dev ninja-build
 
     - name: Setup macOS dependencies
       if: runner.os == 'macOS'
       run: |
         brew install \
-            glib pkg-config sdl2_image sdl2_mixer sdl2 ninja
+            glib pkg-config sdl2_image sdl2_mixer sdl2_ttf sdl2 ninja iniparser
 
     - name: Set up Windows dependencies
       if: matrix.platform.shell == 'msys2 {0}'
@@ -50,6 +50,7 @@ jobs:
           ${{ matrix.platform.msys-env }}-ninja
           ${{ matrix.platform.msys-env }}-SDL2_image
           ${{ matrix.platform.msys-env }}-SDL2_mixer
+          ${{ matrix.platform.msys-env }}-SDL2_ttf
           ${{ matrix.platform.msys-env }}-SDL2
 
     - name: Configure CMake
