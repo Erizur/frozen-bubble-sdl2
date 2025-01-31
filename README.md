@@ -1,37 +1,15 @@
 # Frozen-Bubble: SDL2
 An ongoing port of the original Frozen-Bubble 2 into a newer C++ codebase using SDL2. I am planning on reimplementing most features from the original Frozen-Bubble 2 into the codebase, but some of them might be out of my knowledge. Feel free to contribute if you want!
 
-**Currently implemented:**
-- [X] Title Screen
-    - [ ] Fully working menu buttons
-    - [X] Credits banner
-    - [X] Graphics adjust button
-- [X] Game Settings
-    - [X] Default settings
-    - [ ] Read highscores
-    - [X] Read data from settings.ini
-- [X] Audio Mixer
-    - [ ] 1P and 2P in-game songs
-    - [X] Main menu theme
-    - [X] Sound effects loader
-
-**To do (important)**
-- [ ] Game modes
-    - [ ] 1P (Default levelset & random)
-    - [ ] 2P
-- [ ] Highscores
-    - [ ] Save/load highscores
-- [ ] Level editor
-    - [ ] Menu & instructions
-    - [ ] Save/load levels
-
-**To do (low priority)**
-- [ ] LAN multiplayer / Netplay
-    - [ ] Fix server code
-    - [ ] Reimplement multiplayer logic
-- [ ] Packaging / Distribution
-    - [ ] Easier deployment
+Checklist: https://github.com/Erizur/frozen-bubble-sdl2/issues/1
 
 # Building
-You need to install SDL2, SDL2_image, SDL2_mixer, iniparser-static and glib in order to install.
-After that, just compile with CMake. Detailed instructions will be done soon.
+You need to obtain the following libraries: 
+- SDL2
+- SDL2_image
+- SDL2_mixer
+- SDL2_ttf
+- [iniparser](https://github.com/ndevilla/iniparser)
+Make sure these are detected by CMake. After that, you're ready to compile!
+You will be able to compile the server-related code if you're trying to compile for macOS and Linux.
+For the moment, the DATA_DIR path is fixed to the path of the repository, unless you specify your own path.
