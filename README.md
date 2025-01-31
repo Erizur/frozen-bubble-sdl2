@@ -10,6 +10,7 @@ You need to obtain the following libraries:
 - SDL2_mixer
 - SDL2_ttf
 - [iniparser](https://github.com/ndevilla/iniparser)
+
 Make sure these are detected by CMake. After that, you're ready to compile!
 You will be able to compile the server-related code if you're trying to compile for macOS and Linux.
 For the moment, the DATA_DIR path is fixed to the path of the repository, unless you specify your own path.
