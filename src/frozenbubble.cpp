@@ -32,7 +32,7 @@ FrozenBubble::FrozenBubble() {
     gameOptions->ReadSettings();
 
     SDL_Point resolution = gameOptions->curResolution();
-    Uint32 fullscreen = gameOptions->fullscreenMode() == true ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+    Uint32 fullscreen = gameOptions->fullscreenMode() ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
 
     window = SDL_CreateWindow("Frozen-Bubble", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, resolution.x, resolution.y, fullscreen);
     if(gameOptions->linearScaling) SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");
@@ -129,7 +129,7 @@ uint8_t FrozenBubble::RunForEver()
     }
     if (startTime != 0) addictedTime += SDL_GetTicks() - startTime;
     if(addictedTime != 0) printf("Addicted for %s, %d bubbles were launched.", formatTime(addictedTime/1000), totalBubbles);
-    //SDL_Quit(); causes a segfault, i don't know if this is intended
+    this->~FrozenBubble();
     return 0;
 }
 
@@ -149,7 +149,7 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
             switch(e->key.keysym.sym) {
                 case SDLK_F12:
                     gameOptions->SetValue("GFX:Fullscreen", "");
-                    SDL_SetWindowFullscreen(window, gameOptions->fullscreenMode() == true ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+                    SDL_SetWindowFullscreen(window, gameOptions->fullscreenMode() ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
                     break;
                 case SDLK_PAUSE:
                     CallGamePause();

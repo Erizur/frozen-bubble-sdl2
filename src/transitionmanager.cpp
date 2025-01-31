@@ -28,6 +28,7 @@ void TransitionManager::Dispose(){
 
 void TransitionManager::DoSnipIn(SDL_Renderer *rend) 
 {
+    if (gameSettings->gfxLevel() > 2) return;
     float w = 0, h = 0;
     SDL_RenderGetScale(rend, &w, &h);
     SDL_Rect dstSize = {0, 0, 640, 480};
@@ -39,6 +40,7 @@ void TransitionManager::DoSnipIn(SDL_Renderer *rend)
 
 void TransitionManager::TakeSnipOut(SDL_Renderer *rend) 
 {
+    if (gameSettings->gfxLevel() > 2) return;
     float w = 0, h = 0;
     SDL_RenderGetScale(rend, &w, &h);
     SDL_Rect dstSize = {0, 0, 640, 480};

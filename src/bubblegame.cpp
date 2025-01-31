@@ -16,7 +16,7 @@ struct SingleBubble {
     int bubbleId; // id to use bubble image
     SDL_Point pos; // current position, top left aligned
     SDL_Point oldpos; // old position, useful for collision
-    float direction; // angle
+    float direction = PI/2; // angle
     bool falling = false; // is falling from the top
     bool launching = false; // is launched from shooter
     int leftLimit, rightLimit, topLimit; // limit before bouncing
@@ -57,9 +57,9 @@ struct SingleBubble {
     void UpdatePosition() {
         if (launching) {
             oldpos = pos;
-            if (!lowGfx) pos.x -= BUBBLE_SPEED * SDL_cos(direction);
-            else pos.x += BUBBLE_SPEED * SDL_cos(direction);
-            pos.y -= BUBBLE_SPEED * SDL_sin(direction);
+            if (!lowGfx) pos.x -= BUBBLE_SPEED * cosf(direction);
+            else pos.x += BUBBLE_SPEED * cosf(direction);
+            pos.y -= BUBBLE_SPEED * sinf(direction);
             if (pos.x < leftLimit) {
                 AudioMixer::Instance()->PlaySFX("rebound");
                 pos.x = 2 * leftLimit - pos.x;
@@ -260,28 +260,27 @@ void BubbleGame::RandomLevel(BubbleArray &bArray){
     SDL_Point &offset = bArray.bubbleOffset;
     std::array<std::vector<Bubble>, 13> &bubbleMap = bArray.bubbleMap;
 
-    int start = ranrange(0, 1);
-    int untilend = ((start == 0 ? 13 : 14) / 2) - 1;
-    for (size_t i = start; i < bArray.bubbleMap.size() - (start == 0 ? 0 : 1); i++)
+    int r = ranrange(0,1);
+    int untilend = (13 / 2) - 1;
+    for (size_t i = 0; i < bArray.bubbleMap.size(); i++)
     {
-        int size = i % 2 == 0 ? 8 : 7;
-        int smallerSep = i % 2 == 0 ? 0 : bubbleSize / 2;
+        int size = (i + r) % 2 == 0 ? 8 : 7;
+        int smallerSep = (i + r) % 2 == 0 ? 0 : bubbleSize / 2;
         for (int j = 0; j < size; j++)
         {
-            int k = start == 0 ? i : i - 1;
-            bubbleMap[k].push_back(Bubble{(int)i < untilend ? ranrange(0, 7) : -1, {(smallerSep + bubbleSize * ((int)j)) + offset.x, (initBubbleY * ((int)k)) + offset.y}});
+            bubbleMap[i].push_back(Bubble{(int)i < untilend ? ranrange(0, 7) : -1, {(smallerSep + bubbleSize * ((int)j)) + offset.x, (initBubbleY * ((int)i)) + offset.y}});
         }
     }
 
     inGameText.UpdateText(renderer, "Random level", 0);
-    inGameText.UpdatePosition({(inGameText.Coords()->w / 2) + 10, 105});
+    inGameText.UpdatePosition({75 - (inGameText.Coords()->w / 2), 105});
 }
 
 void SetupGameMetrics(BubbleArray &bArray, int playerCount, bool lowGfx){
     bool onePlayer = playerCount == 1;
 
     if (onePlayer) {
-        if (lowGfx) bArray.lGfxShooterRct.w = bArray.lGfxShooterRct.h = 4;
+        if (lowGfx) bArray.lGfxShooterRct.w = bArray.lGfxShooterRct.h = 2;
         bArray.compressorRct = {SCREEN_CENTER_X - 128, -5 + (28 * bArray.numSeparators), 252, 56};
         bArray.curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
         bArray.nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
@@ -316,8 +315,13 @@ void BubbleGame::NewGame(SetupSettings setup) {
         SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
     }
 
-    LoadLevelset(DATA_DIR "/data/levels");
-    LoadLevel(curLevel);
+    if (!currentSettings.randomLevels) {
+        LoadLevelset(DATA_DIR "/data/levels");
+        LoadLevel(curLevel);
+    }
+    else {
+        for (int i = 0; i < currentSettings.playerCount; i++) RandomLevel(bubbleArrays[i]);
+    }
 
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
@@ -332,6 +336,11 @@ void RemoveArray(BubbleArray &bArray) {
 }
 
 void BubbleGame::ReloadGame(int level) {
+    if (level >= (int)loadedLevels.size() && !currentSettings.randomLevels){
+        QuitToTitle();
+        return;
+    }
+
     SDL_Renderer *rend = const_cast<SDL_Renderer*>(renderer);
 
     TransitionManager::Instance()->DoSnipIn(rend);
@@ -351,8 +360,17 @@ void BubbleGame::ReloadGame(int level) {
         SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
     }
 
-    LoadLevel(level);
-    ChooseFirstBubble(bubbleArrays[0]);
+    if (!currentSettings.randomLevels) {
+        LoadLevel(level);
+        for (int i = 0; i < currentSettings.playerCount; i++) ChooseFirstBubble(bubbleArrays[i]);
+    }
+    else {
+        for (int i = 0; i < currentSettings.playerCount; i++) {
+            RandomLevel(bubbleArrays[i]);
+            ChooseFirstBubble(bubbleArrays[i]);
+        }
+    }
+    
 }
 
 void BubbleGame::LaunchBubble(BubbleArray &bArray) {
@@ -397,10 +415,10 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
         return;
     }
 
-    if (bArray.shooterLeft || bArray.shooterRight || bArray.shooterCenter) {
-        if (angle < 0.1) angle = 0.1;
-        if (angle > PI-0.1) angle = PI-0.1;
+    if (angle < 0.1) angle = 0.1;
+    if (angle > PI-0.1) angle = PI-0.1;
 
+    if (bArray.shooterLeft || bArray.shooterRight || bArray.shooterCenter) {
         if (bArray.shooterLeft) {
             angle += lowGfx ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
             if(penguin.curAnimation != 1 && (penguin.curAnimation > 7 || penguin.curAnimation < 2)) penguin.PlayAnimation(2);
@@ -643,7 +661,7 @@ void BubbleGame::DoPrelightAnimation(BubbleArray &bArray, int &waitTime){
     if (waitTime <= 0) {
         if(bArray.framePrelight <= 0) {
             for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
-                if (lowGfx && i > 0) continue;
+                if (lowGfx) continue;
                 for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
                     if (j == (size_t)alertColumn) {
                         bArray.bubbleMap[i][j].shining = true;
@@ -758,8 +776,8 @@ void BubbleGame::Render() {
             curArray.penguinSprite.Render();
             curArray.shooterSprite.Render();
         } else {
-            curArray.lGfxShooterRct.x = (int)((640/2) + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle)));
-            curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle)));
+            curArray.lGfxShooterRct.x = (int)((640/2) + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
+            curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(curArray.shooterSprite.angle)));
             SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
         }
     }
@@ -780,8 +798,8 @@ void BubbleGame::Render() {
                 curArray.penguinSprite.Render();
                 curArray.shooterSprite.Render();
             } else {
-                curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * SDL_cos(curArray.shooterSprite.angle)));
-                curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * SDL_sin(curArray.shooterSprite.angle)));
+                curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
+                curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(curArray.shooterSprite.angle)));
                 SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
             }
         }
@@ -842,7 +860,7 @@ void BubbleGame::HandleInput(SDL_Event *e) {
                     if (gameFinish == false) bubbleArrays[0].shooterAction = true;
                     break;
                 case SDLK_ESCAPE:
-                    FrozenBubble::Instance()->CallGameQuit();
+                    QuitToTitle();
                     break;
                 case SDLK_F11: // mute / unpause audio
                     if(audMixer->IsHalted() == true) {
@@ -859,4 +877,10 @@ void BubbleGame::HandleInput(SDL_Event *e) {
             }
             break;
     }
+}
+
+void BubbleGame::QuitToTitle() {
+    RemoveArray(bubbleArrays[0]);
+    FrozenBubble::Instance()->CallMenuReturn();
+    firstRenderDone = false;
 }

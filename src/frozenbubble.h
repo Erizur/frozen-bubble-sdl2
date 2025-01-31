@@ -27,6 +27,7 @@ class FrozenBubble
 public:
     int totalBubbles = 0;
     Uint32 startTime = 0;
+    void CallMenuReturn() { mainMenu->ReturnToMenu(); };
     void CallGameQuit() { IsGameQuit = true; };
     void CallGamePause() { IsGamePause = !IsGamePause; };
 

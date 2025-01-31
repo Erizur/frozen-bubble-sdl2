@@ -6,6 +6,7 @@
 
 #include "menubutton.h"
 #include "shaderstuff.h"
+#include "ttftext.h"
 
 #pragma region "banner_defines"
 #define BANNER_START 1000
@@ -32,6 +33,7 @@ public:
     void HandleInput(SDL_Event *e);
     void SetupNewGame(int mode);
     void ShowPanel(int which);
+    void ReturnToMenu();
 private:
     const SDL_Renderer *renderer;
     std::vector<MenuButton> buttons;
@@ -71,19 +73,34 @@ private:
     void BannerRender();
     void CandyRender();
 
+    TTFText panelText;
+
     //singleplayer panel
     SDL_Texture *singlePanelBG;
     SDL_Texture *singleButtonAct, *singleButtonIdle;
     SDL_Surface *activeSPButtons[SP_OPT];
+    SDL_Surface *overlookSfc = nullptr;
     SDL_Texture *idleSPButtons[SP_OPT];
-    int activeSPIdx = 0;
+    int activeSPIdx = 0, overlookIndex = 0;
     bool showingSPPanel = false;
     const struct spPanelEntry {
         std::string option;
-    } spOptions[SP_OPT] = {"play_all_levels", "pick_start_level", "play_random_levels", "multiplayer_training"};
+        int pivot;
+    } spOptions[SP_OPT] = {{"play_all_levels", 90}, {"pick_start_level", 135}, {"play_random_levels", 82}, {"multiplayer_training", 105}};
     
-    SDL_Rect spPanelRct = {(640/2) - (341/2), (480/2) - (280/2), 341, 280};
+    SDL_Rect voidPanelRct = {(640/2) - (341/2), (480/2) - (280/2), 341, 280};
     void SPPanelRender();
+
+    //Options panel render
+    bool showingOptPanel = false, awaitKp = false, runDelay = false;
+    int delayTime;
+    SDL_Keycode lastOptInput = SDLK_UNKNOWN;
+    SDL_Texture *voidPanelBG;
+    void OptPanelRender();
+
+    //game setup defines
+    bool chainReaction = false;
+    int selectedMode;
 };
 
 #endif // MAINMENU_H

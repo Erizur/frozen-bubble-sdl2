@@ -84,9 +84,15 @@ MainMenu::MainMenu(const SDL_Renderer *renderer)
     singleButtonAct = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/txt_menu_1p_over.png");
     singleButtonIdle = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/txt_menu_1p_off.png");
 
+    voidPanelBG = IMG_LoadTexture(rend, DATA_DIR "/gfx/menu/void_panel.png");
+
     InitCandy();
 
     buttons[active_button_index].Activate();
+
+    panelText.LoadFont(DATA_DIR "/gfx/DroidSans.ttf", 15);
+    panelText.UpdateAlignment(TTF_WRAPPED_ALIGN_CENTER);
+    panelText.UpdateColor({255, 255, 255, 255}, {0, 0, 0, 255});
 }
 
 MainMenu::~MainMenu() {
@@ -153,6 +159,12 @@ void MainMenu::HandleInput(SDL_Event *e){
     switch(e->type) {
         case SDL_KEYDOWN:
             if(e->key.repeat) break;
+            if (awaitKp && showingOptPanel && e->key.keysym.sym != SDLK_ESCAPE) {
+                AudioMixer::Instance()->PlaySFX("typewriter");
+                lastOptInput = e->key.keysym.sym;
+                awaitKp = false;
+                break;
+            }
             switch(e->key.keysym.sym) {
                 case SDLK_UP:
                 case SDLK_LEFT:
@@ -173,7 +185,13 @@ void MainMenu::HandleInput(SDL_Event *e){
                         AudioMixer::Instance()->PlaySFX("cancel");
                         showingSPPanel = false;
                         break;
-                    } 
+                    }
+                    if (showingOptPanel) {
+                        AudioMixer::Instance()->PlaySFX("cancel");
+                        showingOptPanel = false;
+                        awaitKp = false;
+                        break;
+                    }
                     FrozenBubble::Instance()->CallGameQuit();
                     break;
                 case SDLK_F11: // mute / unpause audio
@@ -198,6 +216,7 @@ void MainMenu::Render(void) {
     BlinkRender();
     CandyRender();
     SPPanelRender();
+    OptPanelRender();
 }
 
 void MainMenu::BannerRender() {
@@ -306,23 +325,79 @@ void MainMenu::CandyRender() {
     candyIndex++;
 }
 
+void restartOverlook(SDL_Surface *overlookSfc, int &overlookIndex){
+    if(GameSettings::Instance()->gfxLevel() > 2) return;
+    overlook_init_(overlookSfc);
+    overlookIndex = 0;
+}
+
 void MainMenu::SPPanelRender() {
     if (!showingSPPanel) return;
 
-    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singlePanelBG, nullptr, &spPanelRct);
-    for (int i = 0; i < SP_OPT; i++){
-        SDL_Rect entryRct = {(640/2)-(298/2), ((480/2)-86)+(41 * (i + 1)), 298, 37};
-        if(i == activeSPIdx) SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonAct, nullptr, &entryRct);
-        else SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonIdle, nullptr, &entryRct);
-        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), idleSPButtons[i], nullptr, &entryRct);
+    if(overlookSfc == nullptr) {
+        overlookSfc = SDL_CreateRGBSurfaceWithFormat(0, activeSPButtons[0]->w, activeSPButtons[0]->h, 32, SURF_FORMAT);
+        overlook_init_(overlookSfc);
     }
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singlePanelBG, nullptr, &voidPanelRct);
+    for (int i = 0; i < SP_OPT; i++){
+        int w, h;
+        SDL_QueryTexture(idleSPButtons[i], nullptr, nullptr, &w, &h);
+        SDL_Rect entryRct = {(640/2)-(298/2), ((480/2)-90)+(41 * (i + 1)), 298, 37};
+        SDL_Rect subRct = {(640/2)-(298/2), ((480/2)-90)+(41 * (i + 1)), w, h};
+        if(i == activeSPIdx) {
+            if (GameSettings::Instance()->gfxLevel() <= 2) {
+                overlook_(overlookSfc, activeSPButtons[i], overlookIndex, spOptions[i].pivot);
+                SDL_Rect miniRct = {(640/2)-(298/2), ((480/2)-90)+(41 * (i + 1)), overlookSfc->w, overlookSfc->h};
+                SDL_Texture *miniOverlook = SDL_CreateTextureFromSurface(const_cast<SDL_Renderer*>(renderer), overlookSfc);
+                
+                SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonAct, nullptr, &entryRct);
+                SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), miniOverlook, nullptr, &miniRct);
+                SDL_DestroyTexture(miniOverlook);
+
+                overlookIndex++;
+                if (overlookIndex >= 70) overlookIndex = 0;
+            }
+            else SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonAct, nullptr, &entryRct);
+        }
+        else SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), singleButtonIdle, nullptr, &entryRct);
+        SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), idleSPButtons[i], nullptr, &subRct);
+    }
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), panelText.Texture(), nullptr, panelText.Coords());
+}
+
+void MainMenu::OptPanelRender() {
+    if (!showingOptPanel) return;
+
+    if(awaitKp == false && lastOptInput != SDLK_UNKNOWN && !runDelay) { // we got our response
+        chainReaction = lastOptInput == SDLK_y ? true : false;
+
+        char pnltxt[256];
+        sprintf(pnltxt, "Random level\n\n\nEnable chain reaction?\n\n\nY or N?:        %s\n\n\n\n\nEnjoy the game!", SDL_GetKeyName(lastOptInput));
+        panelText.UpdateText(const_cast<SDL_Renderer *>(renderer), pnltxt, 0);
+        panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
+
+        delayTime = 120;
+        runDelay = true;
+    }
+
+    if (runDelay){
+        if (delayTime == 0) SetupNewGame(selectedMode);
+        else delayTime--;
+    }
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), voidPanelBG, nullptr, &voidPanelRct);
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), panelText.Texture(), nullptr, panelText.Coords());
 }
 
 void MainMenu::press() {
+    if (showingOptPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_selected");
 
     if (showingSPPanel) {
-        if(activeSPIdx == 0) SetupNewGame(1);
+        if (activeSPIdx == 0) SetupNewGame(1);
+        if (activeSPIdx == 2) ShowPanel(1);
         return;
     }
 
@@ -331,11 +406,13 @@ void MainMenu::press() {
 
 void MainMenu::down()
 {
+    if (showingOptPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_change");
 
     if (showingSPPanel) {
         if (activeSPIdx == SP_OPT - 1) activeSPIdx = 0;
         else activeSPIdx++;
+        restartOverlook(overlookSfc, overlookIndex);
         return;
     }
 
@@ -351,11 +428,13 @@ void MainMenu::down()
 
 void MainMenu::up()
 {
+    if (showingOptPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_change");
 
     if (showingSPPanel) {
         if (activeSPIdx == 0) activeSPIdx = SP_OPT - 1;
         else activeSPIdx--;
+        restartOverlook(overlookSfc, overlookIndex);
         return;
     }
 
@@ -372,8 +451,17 @@ void MainMenu::up()
 
 void MainMenu::ShowPanel(int which) {
     switch (which){
-        case 0:
+        case 0: // singleplayer menu
             showingSPPanel = true;
+            panelText.UpdateText(const_cast<SDL_Renderer *>(renderer), "Start 1-player game menu", 0);
+            panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
+            break;
+        case 1: // random level
+            showingSPPanel = false;
+            showingOptPanel = awaitKp = true;
+            panelText.UpdateText(const_cast<SDL_Renderer *>(renderer), "Random level\n\n\nEnable chain reaction?\n\n\nY or N?:          \n", 0);
+            panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
+            selectedMode = 3;
             break;
         default:
             break;
@@ -381,9 +469,27 @@ void MainMenu::ShowPanel(int which) {
 }
 
 void MainMenu::SetupNewGame(int mode) {
-    if(mode == 1) {
-        //wip
-        TransitionManager::Instance()->DoSnipIn(const_cast<SDL_Renderer*>(renderer));
-        FrozenBubble::Instance()->bubbleGame()->NewGame({false, 1, false});
+    TransitionManager::Instance()->DoSnipIn(const_cast<SDL_Renderer*>(renderer));
+    switch(mode){
+        case 1:
+            FrozenBubble::Instance()->bubbleGame()->NewGame({chainReaction, 1, false});
+            break;
+        case 3:
+            FrozenBubble::Instance()->bubbleGame()->NewGame({chainReaction, 1, false, true});
+            break;
+        default:
+            break;
     }
+}
+
+void MainMenu::ReturnToMenu() {
+    AudioMixer::Instance()->PlayMusic("intro");
+    FrozenBubble::Instance()->currentState = TitleScreen;
+    candyIndex = 0;
+    bannerCurpos = 0;
+    showingSPPanel = false;
+    showingOptPanel = false;
+    awaitKp = false;
+    selectedMode = 0;
+    runDelay = false;
 }

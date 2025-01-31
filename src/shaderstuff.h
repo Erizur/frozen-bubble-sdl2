@@ -139,6 +139,8 @@ void pixelize_(SDL_Surface *dest, SDL_Surface *orig);
 
 void blacken_(SDL_Surface *surf, int step);
 
+void overlook_init_(SDL_Surface *surf);
+
 void overlook_(SDL_Surface *dest, SDL_Surface *orig, int step, int pivot);
 
 void snow_(SDL_Surface *dest, SDL_Surface *orig);

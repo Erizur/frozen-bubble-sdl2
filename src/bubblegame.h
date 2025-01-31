@@ -199,7 +199,7 @@ struct Bubble {
 struct Shooter {
     SDL_Texture *texture;
     SDL_Renderer *renderer;
-    float angle = PI/2.;
+    float angle = PI/2;
     SDL_Rect rect = {};
 
     void Render(){
@@ -211,6 +211,7 @@ struct SetupSettings {
     bool chainReaction = false;
     int playerCount = 1;
     bool networkGame = false;
+    bool randomLevels = false;
 };
 
 struct BubbleArray {
@@ -349,6 +350,8 @@ private:
 
     void RandomLevel(BubbleArray &bArray);
     void ReloadGame(int level);
+
+    void QuitToTitle();
 };
 
 #endif // BUBBLEGAME_H
