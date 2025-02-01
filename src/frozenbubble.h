@@ -10,6 +10,8 @@
 #include "gamesettings.h"
 #include "audiomixer.h"
 
+#include "highscoremanager.h"
+
 #include "mainmenu.h"
 #include "bubblegame.h"
 
@@ -19,7 +21,8 @@ enum GameState {
     TitleScreen = 0,
     MainGame = 1,
     LevelEditor = 2,
-    Netplay = 3
+    Netplay = 3,
+    Highscores = 4
 };
 
 class FrozenBubble
@@ -48,6 +51,8 @@ private:
 
     MainMenu *mainMenu;
     BubbleGame *mainGame;
+
+    HighscoreManager *hiscoreManager;
 
     TTFText menuText;
 

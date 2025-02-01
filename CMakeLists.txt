@@ -73,6 +73,7 @@ add_executable(frozen-bubble
     src/bubblegame.cpp
     src/transitionmanager.cpp
     src/ttftext.cpp
+    src/highscoremanager.cpp
     ${RES_FILES}
 )
 

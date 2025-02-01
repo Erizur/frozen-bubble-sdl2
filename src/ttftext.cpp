@@ -12,9 +12,13 @@ TTFText::~TTFText(){
 void TTFText::LoadFont(const char *path, int size) {
     textFont = TTF_OpenFont(path, size);
 }
+void TTFText::LoadFont(TTF_Font *fnt) {
+    textFont = fnt;
+}
 
 void TTFText::UpdateText(const SDL_Renderer *rend, const char *txt, int wrapLength) {
     if (outTexture != nullptr) SDL_DestroyTexture(outTexture);
+    curText = const_cast<char *>(txt);
     SDL_Surface *front = TTF_RenderUTF8_Blended_Wrapped(textFont, txt, forecolor, wrapLength);
     SDL_Surface *back = TTF_RenderUTF8_Blended_Wrapped(textFont, txt, backcolor, wrapLength);
     SDL_Rect end = {-1, -1, front->w, front->h};
@@ -37,6 +41,10 @@ void TTFText::UpdateColor(SDL_Color fg, SDL_Color bg) {
 
 void TTFText::UpdateStyle(int size, int style) {
     TTF_SetFontSize(textFont, size);
+    TTF_SetFontStyle(textFont, style);
+}
+
+void TTFText::UpdateStyle(int style) {
     TTF_SetFontStyle(textFont, style);
 }
 

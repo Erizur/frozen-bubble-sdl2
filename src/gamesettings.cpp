@@ -46,6 +46,7 @@ void GameSettings::CreateDefaultSettings()
         EvalIniResult(rval, dict, "GFX:Fullscreen", "false");
         EvalIniResult(rval, dict, "GFX:WindowWidth", "640");
         EvalIniResult(rval, dict, "GFX:WindowHeight", "480");
+        EvalIniResult(rval, dict, "GFX:ColorblindBubbles", "480");
 
         EvalIniResult(rval, dict, "Sound", NULL);
         EvalIniResult(rval, dict, "Sound:EnableMusic", "true");
@@ -75,8 +76,6 @@ void GameSettings::ReadSettings()
     strcpy(setPath, prefPath);
     strcat(setPath, "settings.ini");
 
-    //int rval;
-
     optDict = iniparser_load(setPath);
 
     while (optDict == NULL)
@@ -91,6 +90,7 @@ void GameSettings::ReadSettings()
     useFullscreen = iniparser_getboolean(optDict, "GFX:Fullscreen", false);
     windowWidth = iniparser_getint(optDict, "GFX:WindowWidth", 640);
     windowHeight = iniparser_getint(optDict, "GFX:WindowHeight", 480);
+    colorblindBubbles = iniparser_getboolean(optDict, "GFX:ColorblindBubbles", false);
     if (gfxQuality > 3 || gfxQuality < 1) gfxQuality = 3;
     if (windowWidth < 640 || windowWidth > 9999) windowWidth = 640;
     if (windowHeight < 480 || windowWidth > 9999) windowHeight = 480;

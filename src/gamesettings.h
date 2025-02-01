@@ -26,7 +26,8 @@ public:
     bool linearScaling;
     bool canPlayMusic() { return playMusic; }
     bool canPlaySFX() { return playSfx; }
-    bool useClassicAudio() { return classicSound; } 
+    bool useClassicAudio() { return classicSound; }
+    bool colorBlind() { return colorblindBubbles; }
 
     GameSettings(const GameSettings& obj) = delete;
     void Dispose();
@@ -38,7 +39,7 @@ private:
     dictionary *optDict;
 
     int gfxQuality, windowWidth, windowHeight;
-    bool useFullscreen, playMusic, playSfx, classicSound;
+    bool useFullscreen, colorblindBubbles, playMusic, playSfx, classicSound;
 
     GameSettings(){};
     ~GameSettings();

@@ -14,19 +14,24 @@ class TTFText final
 {
 public:
     void LoadFont(const char *path, int size);
+    void LoadFont(TTF_Font *fnt);
 
     void UpdateText(const SDL_Renderer *rend, const char *txt, int wrapLength);
     void UpdateAlignment(int align);
     void UpdateColor(SDL_Color fg, SDL_Color bg);
     void UpdateStyle(int size, int style);
+    void UpdateStyle(int style);
     void UpdatePosition(SDL_Point xy);
 
+    const char *Text() { return curText; };
     SDL_Rect *Coords() { return &coords; };
     SDL_Texture *Texture() { return outTexture; };
     
     TTFText();
     ~TTFText();
 private:
+    char *curText;
+
     SDL_Rect coords;
     SDL_Color forecolor, backcolor;
 

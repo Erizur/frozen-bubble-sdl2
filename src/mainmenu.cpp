@@ -463,6 +463,9 @@ void MainMenu::ShowPanel(int which) {
             panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
             selectedMode = 3;
             break;
+        case 6:
+            HighscoreManager::Instance()->ShowScoreScreen(0);
+            break;
         default:
             break;
     }

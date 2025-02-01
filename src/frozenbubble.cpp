@@ -61,10 +61,12 @@ FrozenBubble::FrozenBubble() {
     }
 
     audMixer = AudioMixer::Instance();
+    hiscoreManager = HighscoreManager::Instance(renderer);
 
     init_effects((char*)DATA_DIR);
     mainMenu = new MainMenu(renderer);
     mainGame = new BubbleGame(renderer);
+
 }
 
 FrozenBubble::~FrozenBubble() {
@@ -78,6 +80,7 @@ FrozenBubble::~FrozenBubble() {
         window = nullptr;
     }
 
+    hiscoreManager->Dispose();
     audMixer->Dispose();
     gameOptions->Dispose();
 
@@ -115,6 +118,10 @@ uint8_t FrozenBubble::RunForEver()
             SDL_RenderClear(renderer);
             if (currentState == TitleScreen) mainMenu->Render();
             else if (currentState == MainGame) mainGame->Render();
+            else if (currentState == Highscores) {
+                if (hiscoreManager->lastState == 1) mainGame->Render();
+                hiscoreManager->RenderScoreScreen();
+            }
             SDL_RenderPresent(renderer);
         }
         else {
@@ -162,6 +169,10 @@ void FrozenBubble::HandleInput(SDL_Event *e) {
     }
 
     if (IsGamePause) return;
+    if(currentState == Highscores) {
+        hiscoreManager->HandleInput(e);
+        return;
+    }
     if(currentState == TitleScreen) mainMenu->HandleInput(e);
     if(currentState == MainGame) mainGame->HandleInput(e);
 }

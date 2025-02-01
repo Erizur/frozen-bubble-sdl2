@@ -131,6 +131,7 @@ void MenuButton::Pressed(void *parent)
     //oh boy
     if(buttonName == "graphics") GameSettings::Instance()->SetValue("GFX:Quality", "");
     if(buttonName == "1pgame") ((MainMenu *)parent)->ShowPanel(0);
+    if(buttonName == "highscores") ((MainMenu *)parent)->ShowPanel(6);
 }
 
 void MenuButton::Activate()
