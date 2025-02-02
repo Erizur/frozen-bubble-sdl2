@@ -241,7 +241,7 @@ void HighscoreManager::CreateLevelImages() {
 
     for (size_t i = 0; i < levelsetScores.size(); i++) {
         levelsetScores[i].RefreshTextStatus(rend, highscoreFont);
-        levelsetScores[i].layoutText.UpdatePosition({120 * ((int)i + 1) - levelsetScores[i].layoutText.Coords()->w/2, (115 * ((int)i + 1)) + (70 * (((int)i + 1) % 6))});
+        levelsetScores[i].layoutText.UpdatePosition({108 * ((int)i + 1) - levelsetScores[i].layoutText.Coords()->w/2, (115 * (((int)i + 1) % 6 == 0 ? 2 : 1)) + (70 * (((int)i + 1) % 6 == 0 ? 2 : 1))});
     }
 }
 
@@ -257,7 +257,7 @@ void HighscoreManager::RenderScoreScreen() {
         for (size_t i = 0; i < levelsetScores.size(); i++) {
             int sx, sy;
             SDL_QueryTexture(smallBG[i], nullptr, nullptr, &sx, &sy);
-            SDL_Rect bgPos = {85 * ((int)i + 1), (20 * ((int)i + 1)) + (70 * (((int)i + 1) % 6)), sx, sy};
+            SDL_Rect bgPos = {85 * (int)(i > 5 ? (i - 5) + 1 : i + 1) + (20 * ((int)i % 6)), (80 * (((int)i + 1) >= 6 ? 1 : 0)) + (80 * (((int)i + 1) >= 6 ? 2 : 1)), sx, sy};
             SDL_Rect framePos = {bgPos.x - 7, bgPos.y - 7, 81, 100};
             SDL_RenderCopy(rend, highscoreFrame, nullptr, &framePos);
             SDL_RenderCopy(rend, smallBG[i], nullptr, &bgPos);

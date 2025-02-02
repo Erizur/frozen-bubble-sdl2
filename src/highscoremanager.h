@@ -45,7 +45,7 @@ private:
     void CreateLevelImages();
 
     SDL_Surface *backgroundSfc, *useBubbles[8];
-    SDL_Texture *smallBG[10], *highscoresBG, *highscoreFrame, *headerLevelset, *headerMptrain;
+    SDL_Texture *smallBG[10] = { nullptr }, *highscoresBG, *highscoreFrame, *headerLevelset, *headerMptrain;
 
     TTF_Font *highscoreFont;
     TTFText panelText, nameInput;
