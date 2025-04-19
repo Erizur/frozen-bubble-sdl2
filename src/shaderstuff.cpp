@@ -1,5 +1,4 @@
 #include "shaderstuff.h"
-#include "gamesettings.h"
 
 const int XRES = 640;
 const int YRES = 480;
@@ -87,13 +86,13 @@ int rand_(double val) { return 1 + (int)(val * rand() / (RAND_MAX + 1.0)); }
 /* -------------- Double Store ------------------ */
 void copy_line(int l, SDL_Surface *s, SDL_Surface *img)
 {
-    memcpy(s->pixels + l * img->pitch, img->pixels + l * img->pitch, img->pitch);
+    memcpy((Uint8 *)s->pixels + l * img->pitch, (Uint8 *)img->pixels + l * img->pitch, img->pitch);
 }
 void copy_column(int c, SDL_Surface *s, SDL_Surface *img)
 {
     int bpp = img->format->BytesPerPixel;
     for (y = 0; y < YRES; y++)
-        memcpy(s->pixels + y * img->pitch + c * bpp, img->pixels + y * img->pitch + c * bpp, bpp);
+        memcpy((Uint8 *)s->pixels + y * img->pitch + c * bpp, (Uint8 *)img->pixels + y * img->pitch + c * bpp, bpp);
 }
 
 void store_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Texture *tex)
@@ -164,8 +163,8 @@ void bars_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Textu
             {
                 int x_ = (j * 2) * (XRES / bars_num) * bpp;
                 int x__ = (j * 2 + 1) * (XRES / bars_num) * bpp;
-                memcpy(s->pixels + y_ + x_, img->pixels + y_ + x_, (XRES / bars_num) * bpp);
-                memcpy(s->pixels + y__ + x__, img->pixels + y__ + x__, (XRES / bars_num) * bpp);
+                memcpy((Uint8 *)s->pixels + y_ + x_, (Uint8 *)img->pixels + y_ + x_, (XRES / bars_num) * bpp);
+                memcpy((Uint8 *)s->pixels + y__ + x__, (Uint8 *)img->pixels + y__ + x__, (XRES / bars_num) * bpp);
             }
         }
         synchro_after(s, rend, tex);
@@ -180,7 +179,7 @@ int fillrect(int i, int j, SDL_Surface *s, SDL_Surface *img, int bpp, const int 
         return 0;
     v = i * squares_size * bpp + j * squares_size * img->pitch;
     for (c = 0; c < squares_size; c++)
-        memcpy(s->pixels + v + c * img->pitch, img->pixels + v + c * img->pitch, squares_size * bpp);
+        memcpy((Uint8 *)s->pixels + v + c * img->pitch, (Uint8 *)img->pixels + v + c * img->pitch, squares_size * bpp);
     return 1;
 }
 
@@ -244,8 +243,8 @@ void circle_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Tex
 
         for (y = 0; y < YRES; y++)
         {
-            void *src_line = img->pixels + y * img->pitch;
-            void *dest_line = s->pixels + y * img->pitch;
+            Uint8 *src_line = (Uint8 *)img->pixels + y * img->pitch;
+            Uint8 *dest_line = (Uint8 *)s->pixels + y * img->pitch;
             for (x = 0; x < XRES; x++)
                 if (in_or_out == 1)
                 {
@@ -348,7 +347,7 @@ void plasma_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Tex
             {
                 Uint32 pixelvalue = 0;
                 float r, g, b;
-                memcpy(&pixelvalue, img->pixels + y * img->pitch + x * bpp, bpp);
+                memcpy(&pixelvalue, (Uint8 *)img->pixels + y * img->pitch + x * bpp, bpp);
                 r = ((float)((pixelvalue & img->format->Rmask) >> img->format->Rshift)) / (img->format->Rmask >> img->format->Rshift);
                 g = ((float)((pixelvalue & img->format->Gmask) >> img->format->Gshift)) / (img->format->Gmask >> img->format->Gshift);
                 b = ((float)((pixelvalue & img->format->Bmask) >> img->format->Bshift)) / (img->format->Bmask >> img->format->Bshift);
@@ -369,8 +368,8 @@ void plasma_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Tex
             /* I need to un-factorize the 'plasma' call in order to let gcc optimize (tested!) */
             for (y = 0; y < YRES; y++)
             {
-                void *src_line = img->pixels + y * img->pitch;
-                void *dest_line = s->pixels + y * img->pitch;
+                Uint8 *src_line = (Uint8 *)img->pixels + y * img->pitch;
+                Uint8 *dest_line = (Uint8 *)s->pixels + y * img->pitch;
                 if (rnd_plasma == 1)
                 {
                     for (x = 0; x < XRES; x++)
@@ -403,8 +402,8 @@ void plasma_effect(SDL_Surface *s, SDL_Surface *img, SDL_Renderer *rend, SDL_Tex
             unsigned char *p = plasma_type == 2 ? plasma2 : plasma3;
             for (y = 0; y < YRES; y++)
             {
-                void *src_line = img->pixels + y * img->pitch;
-                void *dest_line = s->pixels + y * img->pitch;
+                Uint8 *src_line = (Uint8 *)img->pixels + y * img->pitch;
+                Uint8 *dest_line = (Uint8 *)s->pixels + y * img->pitch;
                 for (x = 0; x < XRES; x++)
                     if (p[x + y * XRES] == step)
                         memcpy(dest_line + x * bpp, src_line + x * bpp, bpp);
@@ -499,11 +498,11 @@ void rotate_nearest_(SDL_Surface *dest, SDL_Surface *orig, double angle)
             y_ = (y - dest->h / 2) * cosval + (x - dest->w / 2) * sinval + dest->h / 2;
             if (x_ < 0 || x_ > dest->w - 2 || y_ < 0 || y_ > dest->h - 2)
             {
-                *((Uint32 *)(dest->pixels + x * bpp + y * dest->pitch)) = orig->format->Amask;
+                *((Uint32 *)((Uint8 *)dest->pixels + x * bpp + y * dest->pitch)) = orig->format->Amask;
                 continue;
             }
-            memcpy(dest->pixels + x * bpp + y * dest->pitch,
-                   orig->pixels + x_ * bpp + y_ * orig->pitch, bpp);
+            memcpy((Uint8 *)dest->pixels + x * bpp + y * dest->pitch,
+                   (Uint8 *)orig->pixels + x_ * bpp + y_ * orig->pitch, bpp);
         }
     }
     myUnlockSurface(orig);
@@ -827,8 +826,8 @@ void flipflop_(SDL_Surface *dest, SDL_Surface *orig, int offset)
             else
             {
                 dx = x__ - x_; // (mono)linear filtering
-                A = (Uint32 *)(orig->pixels + x_ * Bpp + y * orig->pitch);
-                B = (Uint32 *)(orig->pixels + (x_ + 1) * Bpp + y * orig->pitch);
+                A = (Uint32 *)((Uint8 *)orig->pixels + x_ * Bpp + y * orig->pitch);
+                B = (Uint32 *)((Uint8 *)orig->pixels + (x_ + 1) * Bpp + y * orig->pitch);
                 a = geta(A) * (1 - dx) + geta(B) * dx;
                 if (a == 0)
                 {
@@ -1341,10 +1340,10 @@ void alphaize_(SDL_Surface *surf)
         {
             Uint32 pixelvalue = 0;
             int a;
-            memcpy(&pixelvalue, surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
+            memcpy(&pixelvalue, (Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
             a = ((pixelvalue & surf->format->Amask) >> surf->format->Ashift) / 2;
             pixelvalue = (pixelvalue & (~surf->format->Amask)) + (a << surf->format->Ashift);
-            memcpy(surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
+            memcpy((Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
         }
     myUnlockSurface(surf);
 }
@@ -1393,8 +1392,8 @@ void blacken_(SDL_Surface *surf, int step)
     myLockSurface(surf);
     for (y = (step - 1) * surf->h / 70; y < step * surf->h / 70; y++)
     {
-        bzero(surf->pixels + y * surf->pitch, surf->format->BytesPerPixel * XRES);
-        bzero(surf->pixels + (YRES - 1 - y) * surf->pitch, surf->format->BytesPerPixel * XRES);
+        bzero((Uint8 *)surf->pixels + y * surf->pitch, surf->format->BytesPerPixel * XRES);
+        bzero((Uint8 *)surf->pixels + (YRES - 1 - y) * surf->pitch, surf->format->BytesPerPixel * XRES);
         // set_pixel(surf, x, y,           0, 0, 0, 0);
         // set_pixel(surf, x, surf->h - y, 0, 0, 0, 0);
     }
@@ -1408,19 +1407,19 @@ void blacken_(SDL_Surface *surf, int step)
             // SDL_GetRGBA(((Uint32 *)surf->pixels)[x + (surf->h-y-1) * surf->w], surf->format, &r, &g, &b, &a);
             // set_pixel(surf, x, (surf->h-y-1), r*3/4, g*3/4, b*3/4, a);
 
-            memcpy(&pixelvalue, surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
+            memcpy(&pixelvalue, (Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
             r = (((pixelvalue & surf->format->Rmask) >> surf->format->Rshift)) * 3 / 4;
             g = (((pixelvalue & surf->format->Gmask) >> surf->format->Gshift)) * 3 / 4;
             b = (((pixelvalue & surf->format->Bmask) >> surf->format->Bshift)) * 3 / 4;
             pixelvalue = (r << surf->format->Rshift) + (g << surf->format->Gshift) + (b << surf->format->Bshift);
-            memcpy(surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
+            memcpy((Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
 
-            memcpy(&pixelvalue, surf->pixels + (YRES - 1 - y) * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
+            memcpy(&pixelvalue, (Uint8 *)surf->pixels + (YRES - 1 - y) * surf->pitch + x * surf->format->BytesPerPixel, surf->format->BytesPerPixel);
             r = (((pixelvalue & surf->format->Rmask) >> surf->format->Rshift)) * 3 / 4;
             g = (((pixelvalue & surf->format->Gmask) >> surf->format->Gshift)) * 3 / 4;
             b = (((pixelvalue & surf->format->Bmask) >> surf->format->Bshift)) * 3 / 4;
             pixelvalue = (r << surf->format->Rshift) + (g << surf->format->Gshift) + (b << surf->format->Bshift);
-            memcpy(surf->pixels + (YRES - 1 - y) * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
+            memcpy((Uint8 *)surf->pixels + (YRES - 1 - y) * surf->pitch + x * surf->format->BytesPerPixel, &pixelvalue, surf->format->BytesPerPixel);
         }
     myUnlockSurface(surf);
 }

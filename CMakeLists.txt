@@ -21,19 +21,6 @@ find_package(SDL2_ttf REQUIRED)
 
 find_package(iniparser REQUIRED static)
 
-if(NOT SDL2_image_FOUND OR NOT SDL2_mixer_FOUND OR NOT SDL2_ttf_FOUND)
-    find_package(PkgConfig QUIET)
-    if(PkgConfig_FOUND AND NOT SDL2_image_FOUND)
-        pkg_check_modules(SDL2_image IMPORTED_TARGET SDL2_image)
-    endif()
-    if(PkgConfig_FOUND AND NOT SDL2_mixer_FOUND)
-        pkg_check_modules(SDL2_mixer IMPORTED_TARGET SDL2_mixer)
-    endif()
-    if(PkgConfig_FOUND AND NOT SDL2_ttf_FOUND)
-        pkg_check_modules(SDL2_ttf IMPORTED_TARGET SDL2_ttf)
-    endif()
-endif()
-
 if(NOT SDL2_image_FOUND)
     message(FATAL_ERROR "SDL2_image not found")
 endif()
@@ -77,8 +64,6 @@ add_executable(frozen-bubble
     ${RES_FILES}
 )
 
-
-
 set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
 set_property(TARGET frozen-bubble PROPERTY CXX_EXTENSIONS OFF)
 
@@ -98,7 +83,7 @@ target_link_libraries(frozen-bubble PRIVATE
     SDL2::SDL2main
     SDL2::SDL2
     iniparser-static
-    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_image>, $<TARGET_NAME_IF_EXISTS:SDL2_image::SDL2_image>>
-    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_mixer>, $<TARGET_NAME_IF_EXISTS:SDL2_mixer::SDL2_mixer>>
-    $<IF:$<BOOL:${PkgConfig_FOUND}>,$<TARGET_NAME_IF_EXISTS:PkgConfig::SDL2_ttf>, $<TARGET_NAME_IF_EXISTS:SDL2_ttf::SDL2_ttf>>
+    SDL2_image::SDL2_image
+    SDL2_mixer::SDL2_mixer
+    SDL2_ttf::SDL2_ttf
 )
