@@ -3,10 +3,11 @@
 #include "audiomixer.h"
 #include "transitionmanager.h"
 
+#include <fstream>
+#include <sstream>
+
 #include <cmath>
 #include <algorithm>
-#include <iterator>
-#include <memory>
 
 inline int ranrange(int a, int b) { return a + rand() % ((b - a ) + 1); }
 inline float ranrange(float b) { return (rand()) / (static_cast <float> (RAND_MAX/b)); }
@@ -16,7 +17,7 @@ struct SingleBubble {
     int bubbleId; // id to use bubble image
     SDL_Point pos; // current position, top left aligned
     SDL_Point oldpos; // old position, useful for collision
-    float direction = PI/2; // angle
+    float direction = PI/2.0f; // angle
     bool falling = false; // is falling from the top
     bool launching = false; // is launched from shooter
     int leftLimit, rightLimit, topLimit; // limit before bouncing
@@ -57,18 +58,18 @@ struct SingleBubble {
     void UpdatePosition() {
         if (launching) {
             oldpos = pos;
-            if (!lowGfx) pos.x -= BUBBLE_SPEED * cosf(direction);
-            else pos.x += BUBBLE_SPEED * cosf(direction);
-            pos.y -= BUBBLE_SPEED * sinf(direction);
+            if (!lowGfx) pos.x -= ((float)BUBBLE_SPEED) * cosf(direction);
+            else pos.x += ((float)BUBBLE_SPEED) * cosf(direction);
+            pos.y -= ((float)BUBBLE_SPEED) * sinf(direction);
             if (pos.x < leftLimit) {
                 AudioMixer::Instance()->PlaySFX("rebound");
-                pos.x = 2 * leftLimit - pos.x;
-                direction -= 2 * (direction-PI/2);
+                pos.x = 2.0f * leftLimit - pos.x;
+                direction -= 2.0f * (direction-PI/2.0f);
             }
             if (pos.x > rightLimit - bubbleSize) {
                 AudioMixer::Instance()->PlaySFX("rebound");
-                pos.x = 2 * (rightLimit - bubbleSize) - pos.x;
-                direction += 2 * (PI/2-direction);
+                pos.x = 2.0f * (rightLimit - bubbleSize) - pos.x;
+                direction += 2.0f * (PI/2.0f-direction);
             }
         }
         else if (falling) {
@@ -276,16 +277,24 @@ void BubbleGame::RandomLevel(BubbleArray &bArray){
     inGameText.UpdatePosition({75 - (inGameText.Coords()->w / 2), 105});
 }
 
-void SetupGameMetrics(BubbleArray &bArray, int playerCount, bool lowGfx){
-    bool onePlayer = playerCount == 1;
-
-    if (onePlayer) {
-        if (lowGfx) bArray.lGfxShooterRct.w = bArray.lGfxShooterRct.h = 2;
-        bArray.compressorRct = {SCREEN_CENTER_X - 128, -5 + (28 * bArray.numSeparators), 252, 56};
-        bArray.curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
-        bArray.nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
-        bArray.onTopRct = {SCREEN_CENTER_X - 19, 480 - 43, 39, 39};
-        bArray.frozenBottomRct = {SCREEN_CENTER_X - 18, 480 - 42, 34, 48};
+void SetupGameMetrics(BubbleArray *bArray, int playerCount, bool lowGfx){
+    switch (playerCount) {
+        case 2:
+            if (lowGfx) bArray[0].lGfxShooterRct.w = bArray[0].lGfxShooterRct.h = 2;
+            bArray[0].curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
+            bArray[0].nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
+            bArray[0].onTopRct = {SCREEN_CENTER_X - 19, 480 - 43, 39, 39};
+            bArray[0].frozenBottomRct = {SCREEN_CENTER_X - 18, 480 - 42, 34, 48};
+            break;
+        case 1:
+        default:
+            if (lowGfx) bArray[0].lGfxShooterRct.w = bArray[0].lGfxShooterRct.h = 2;
+            bArray[0].compressorRct = {SCREEN_CENTER_X - 128, -5 + (28 * bArray[0].numSeparators), 252, 56};
+            bArray[0].curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
+            bArray[0].nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
+            bArray[0].onTopRct = {SCREEN_CENTER_X - 19, 480 - 43, 39, 39};
+            bArray[0].frozenBottomRct = {SCREEN_CENTER_X - 18, 480 - 42, 34, 48};
+            break;
     }
 }
 
@@ -348,16 +357,21 @@ void BubbleGame::ReloadGame(int level) {
 
     gameFinish = gameWon = gameLost = false;
 
-    if (currentSettings.playerCount == 1){
-        RemoveArray(bubbleArrays[0]);
-        bubbleArrays[0].penguinSprite.PlayAnimation(0);
-        bubbleArrays[0].shooterSprite.angle = PI/2.;
-        bubbleArrays[0].bubbleOffset = {190, 51};
-        bubbleArrays[0].topLimit = 51;
-        bubbleArrays[0].numSeparators = 0;
-        bubbleArrays[0].turnsToCompress = 9;
-        bubbleArrays[0].dangerZone = 12;
-        SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
+    switch (currentSettings.playerCount) {
+        case 2:
+
+            break;
+        case 1:
+            RemoveArray(bubbleArrays[0]);
+            bubbleArrays[0].penguinSprite.PlayAnimation(0);
+            bubbleArrays[0].shooterSprite.angle = PI/2.0f;
+            bubbleArrays[0].bubbleOffset = {190, 51};
+            bubbleArrays[0].topLimit = 51;
+            bubbleArrays[0].numSeparators = 0;
+            bubbleArrays[0].turnsToCompress = 9;
+            bubbleArrays[0].dangerZone = 12;
+            SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
+            break;
     }
 
     if (!currentSettings.randomLevels) {
@@ -428,8 +442,8 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
             if(penguin.curAnimation != 1 && (penguin.curAnimation > 7 || penguin.curAnimation < 2)) penguin.PlayAnimation(5);
         }
         else if (bArray.shooterCenter) {
-            if (angle >= PI/2 - LAUNCHER_SPEED && angle <= PI/2 + LAUNCHER_SPEED) angle = PI/2;
-            else angle += (angle < PI/2) ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
+            if (angle >= PI/2.0f - LAUNCHER_SPEED && angle <= PI/2.0f + LAUNCHER_SPEED) angle = PI/2.0f;
+            else angle += (angle < PI/2.0f) ? LAUNCHER_SPEED : -LAUNCHER_SPEED;
         }
 
         penguin.sleeping = 0;
@@ -776,7 +790,7 @@ void BubbleGame::Render() {
             curArray.penguinSprite.Render();
             curArray.shooterSprite.Render();
         } else {
-            curArray.lGfxShooterRct.x = (int)((640/2) + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
+            curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
             curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(curArray.shooterSprite.angle)));
             SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
         }
