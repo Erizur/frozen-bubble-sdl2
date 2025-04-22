@@ -14,8 +14,7 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
     add_compile_options(-Wall -Wextra -pedantic -Wno-pointer-arith)
 endif()
 
-find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
-find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
+find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_mixer REQUIRED)
 find_package(SDL2_ttf REQUIRED)
@@ -79,10 +78,6 @@ target_include_directories(frozen-bubble
     PRIVATE ${SDL2_MIXER_INCLUDE_DIRS}
     PRIVATE ${SDL2_TTF_INCLUDE_DIRS}
 )
-
-if(TARGET SDL2::SDL2main)
-        target_link_libraries(frozen-bubble PRIVATE SDL2::SDL2main)
-endif()
 
 target_link_libraries(frozen-bubble PRIVATE
     SDL2::SDL2

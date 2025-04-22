@@ -18,13 +18,22 @@
           src = ./.;
           nativeBuildInputs = [
             clang
+	    clang-tools
             cmake
 	    ninja
+	    SDL2
+	    SDL2.dev
+ 	    SDL2_ttf
+	    SDL2_image
+	    SDL2_mixer
+	    iniparser
+	    pkg-config
+	    glib
           ];
-          buildPhase = "ninja -j $NIX_BUILD_CORES";
+          bu0ildPhase = "cd build && ninja -j $NIX_BUILD_CORES";
           installPhase = ''
             mkdir -p $out/bin
-            mv $TMP/frozenbubble-sdl2/frozen-bubble $out/bin
+            mv ./frozen-bubble $out/bin
           '';
         }
       );
