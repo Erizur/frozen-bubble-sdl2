@@ -913,6 +913,10 @@ void BubbleGame::CheckGameState(BubbleArray &bArray) {
     }
     if (bArray.bubbleOnDanger()) {
         gameFinish = true;
+        audMixer->PlaySFX("lose");
+        panelRct = {SCREEN_CENTER_X - 173, 480 - 248, 345, 124};
+        bArray.curLaunchRct = {bArray.curLaunchRct.x - 1, bArray.curLaunchRct.y - 1, 34, 48};
+        bArray.penguinSprite.PlayAnimation(11);
         if (currentSettings.playerCount == 2) {
             int assigned = bArray.playerAssigned == 0 ? 1 : 0;
             if (assigned == 0) winsP1++;
@@ -923,10 +927,6 @@ void BubbleGame::CheckGameState(BubbleArray &bArray) {
 
             Update2PText();
         }
-        audMixer->PlaySFX("lose");
-        panelRct = {SCREEN_CENTER_X - 173, 480 - 248, 345, 124};
-        bArray.curLaunchRct = {bArray.curLaunchRct.x - 1, bArray.curLaunchRct.y - 1, 34, 48};
-        bArray.penguinSprite.PlayAnimation(11);
     }
 }
 
@@ -984,7 +984,7 @@ void BubbleGame::Render() {
         UpdatePenguin(curArray);
         if(!lowGfx) curArray.penguinSprite.Render();
         curArray.shooterSprite.Render(lowGfx);
-            
+        SDL_RenderCopy(rend, inGameText.Texture(), nullptr, inGameText.Coords());
     }
     else { //iterate until all penguins & status are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {
@@ -1045,8 +1045,6 @@ void BubbleGame::Render() {
         SDL_RenderCopy(rend, winsP1Text.Texture(), nullptr, winsP1Text.Coords());
         SDL_RenderCopy(rend, winsP2Text.Texture(), nullptr, winsP2Text.Coords());
     }
-
-    SDL_RenderCopy(rend, inGameText.Texture(), nullptr, inGameText.Coords());
 
     if (!firstRenderDone) {
         TransitionManager::Instance()->TakeSnipOut(rend);
