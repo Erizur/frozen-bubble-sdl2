@@ -159,11 +159,22 @@ BubbleGame::BubbleGame(const SDL_Renderer *renderer)
     soloStatePanels[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/lose_panel.png");
     soloStatePanels[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_1player.png");
 
+    multiStatePanels[0] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_p1.png");
+    multiStatePanels[1] = IMG_LoadTexture(rend, DATA_DIR "/gfx/win_panel_p2.png");
+
     pauseBackground = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_paused.png");
 
     inGameText.LoadFont(DATA_DIR "/gfx/DroidSans.ttf", 20);
     inGameText.UpdateAlignment(TTF_WRAPPED_ALIGN_CENTER);
     inGameText.UpdateColor({255, 255, 255, 255}, {0, 0, 0, 255});
+
+    winsP1Text.LoadFont(DATA_DIR "/gfx/DroidSans.ttf", 20);
+    winsP1Text.UpdateAlignment(TTF_WRAPPED_ALIGN_CENTER);
+    winsP1Text.UpdateColor({255, 255, 255, 255}, {0, 0, 0, 255});
+
+    winsP2Text.LoadFont(DATA_DIR "/gfx/DroidSans.ttf", 20);
+    winsP2Text.UpdateAlignment(TTF_WRAPPED_ALIGN_CENTER);
+    winsP2Text.UpdateColor({255, 255, 255, 255}, {0, 0, 0, 255});
 }
 
 BubbleGame::~BubbleGame() {
@@ -273,18 +284,31 @@ void BubbleGame::RandomLevel(BubbleArray &bArray){
         }
     }
 
-    inGameText.UpdateText(renderer, "Random level", 0);
-    inGameText.UpdatePosition({75 - (inGameText.Coords()->w / 2), 105});
+    if(currentSettings.playerCount < 2) {
+        inGameText.UpdateText(renderer, "Random level", 0);
+        inGameText.UpdatePosition({75 - (inGameText.Coords()->w / 2), 105});
+    }
+    else if (currentSettings.playerCount == 2) {
+        Update2PText();
+    }
 }
 
 void SetupGameMetrics(BubbleArray *bArray, int playerCount, bool lowGfx){
     switch (playerCount) {
         case 2:
-            if (lowGfx) bArray[0].lGfxShooterRct.w = bArray[0].lGfxShooterRct.h = 2;
-            bArray[0].curLaunchRct = {SCREEN_CENTER_X - 16, 480 - 89, 32, 32};
-            bArray[0].nextBubbleRct = {SCREEN_CENTER_X - 16, 480 - 40, 32, 32};
-            bArray[0].onTopRct = {SCREEN_CENTER_X - 19, 480 - 43, 39, 39};
-            bArray[0].frozenBottomRct = {SCREEN_CENTER_X - 18, 480 - 42, 34, 48};
+            if (lowGfx) {
+                bArray[0].lGfxShooterRct.w = bArray[0].lGfxShooterRct.h = 2;
+                bArray[1].lGfxShooterRct.w = bArray[1].lGfxShooterRct.h = 2;
+            }
+            bArray[0].curLaunchRct = {SCREEN_CENTER_X+144, 480-89, 32, 32};
+            bArray[0].nextBubbleRct = {SCREEN_CENTER_X+144, 480-40, 32, 32};
+            bArray[0].onTopRct = {SCREEN_CENTER_X+140, 480-43, 39, 39};
+            bArray[0].frozenBottomRct = {SCREEN_CENTER_X+139, 480-43, 39, 39};
+
+            bArray[1].curLaunchRct = {SCREEN_CENTER_X-176, 480-89, 32, 32};
+            bArray[1].nextBubbleRct = {SCREEN_CENTER_X-176, 480-40, 32, 32};
+            bArray[1].onTopRct = {SCREEN_CENTER_X-179, 480-43, 39, 39};
+            bArray[1].frozenBottomRct = {SCREEN_CENTER_X-180, 480-43, 39, 39};
             break;
         case 1:
         default:
@@ -306,23 +330,61 @@ void BubbleGame::NewGame(SetupSettings setup) {
     lowGfx = GameSettings::Instance()->gfxLevel() > 2;
     char path[256];
 
-    if (currentSettings.playerCount == 1){
-        background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
-        bubbleArrays[0].penguinSprite.LoadPenguin(rend, (char*)"p1", {SCREEN_CENTER_X + 84, 480 - 60, 80, 60});
-        bubbleArrays[0].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
-        bubbleArrays[0].shooterSprite.rect = {SCREEN_CENTER_X - 50, 480 - 123, 100, 100};
-        bubbleArrays[0].bubbleOffset = {190, 51};
-        bubbleArrays[0].leftLimit = SCREEN_CENTER_X - 128;
-        bubbleArrays[0].rightLimit = SCREEN_CENTER_X + 128;
-        bubbleArrays[0].topLimit = 51;
-        bubbleArrays[0].hurryRct = {SCREEN_CENTER_X - 122, 480 - 214, 244, 102};
-        bubbleArrays[0].numSeparators = 0;
-        bubbleArrays[0].playerAssigned = 0;
-        sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p1");
-        bubbleArrays[0].hurryTexture = IMG_LoadTexture(rend, path);
-        audMixer->PlayMusic("main1p");
-        SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
+    if (background != nullptr) SDL_DestroyTexture(background);
+
+    winsP1 = winsP2 = 0;
+
+    switch (currentSettings.playerCount) {
+        case 1:
+            background = IMG_LoadTexture(rend, DATA_DIR "/gfx/back_one_player.png");
+            bubbleArrays[0].penguinSprite.LoadPenguin(rend, "p1", {SCREEN_CENTER_X + 84, 480 - 60, 80, 60});
+            bubbleArrays[0].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
+            bubbleArrays[0].shooterSprite.rect = {SCREEN_CENTER_X - 50, 480 - 123, 100, 100};
+            bubbleArrays[0].bubbleOffset = {190, 51};
+            bubbleArrays[0].leftLimit = SCREEN_CENTER_X - 128;
+            bubbleArrays[0].rightLimit = SCREEN_CENTER_X + 128;
+            bubbleArrays[0].topLimit = 51;
+            bubbleArrays[0].hurryRct = {SCREEN_CENTER_X - 122, 480 - 214, 244, 102};
+            bubbleArrays[0].numSeparators = 0;
+            bubbleArrays[0].playerAssigned = 0;
+            sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p1");
+            bubbleArrays[0].hurryTexture = IMG_LoadTexture(rend, path);
+            audMixer->PlayMusic("main1p");
+            break;
+        case 2:
+            background = IMG_LoadTexture(rend, DATA_DIR "/gfx/backgrnd.png");
+            bubbleArrays[0].penguinSprite.LoadPenguin(rend, "p1", {SCREEN_CENTER_X + 244, 480 - 60, 80, 60});
+            bubbleArrays[0].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
+            bubbleArrays[0].shooterSprite.rect = {SCREEN_CENTER_X + 110, 480 - 123, 100, 100};
+            bubbleArrays[0].bubbleOffset = {354, 40};
+            bubbleArrays[0].leftLimit = SCREEN_CENTER_X + 32;
+            bubbleArrays[0].rightLimit = 640 - 28;
+            bubbleArrays[0].topLimit = 31;
+            bubbleArrays[0].hurryRct = {SCREEN_CENTER_X + 40, 480 - 214, 244, 102};
+            bubbleArrays[0].numSeparators = 0;
+            bubbleArrays[0].playerAssigned = 0;
+            bubbleArrays[0].turnsToCompress = 12;
+            sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p1");
+            bubbleArrays[0].hurryTexture = IMG_LoadTexture(rend, path);
+
+            bubbleArrays[1].penguinSprite.LoadPenguin(rend, "p2", {-5, 480 - 60, 80, 60});
+            bubbleArrays[1].shooterSprite = {lowGfx ? lowShooterTexture : shooterTexture, rend};
+            bubbleArrays[1].shooterSprite.rect = {SCREEN_CENTER_X - 210, 480 - 123, 100, 100};
+            bubbleArrays[1].bubbleOffset = {31, 40};
+            bubbleArrays[1].leftLimit = 32;
+            bubbleArrays[1].rightLimit = 288;
+            bubbleArrays[1].topLimit = 31;
+            bubbleArrays[1].hurryRct = {36, 480 - 214, 244, 102};
+            bubbleArrays[1].numSeparators = 0;
+            bubbleArrays[1].playerAssigned = 1;
+            bubbleArrays[1].turnsToCompress = 12;
+            sprintf(path, DATA_DIR "/gfx/hurry_%s.png", "p2");
+            bubbleArrays[1].hurryTexture = IMG_LoadTexture(rend, path);
+            audMixer->PlayMusic("main2p");
+            break;
     }
+
+    SetupGameMetrics(bubbleArrays, currentSettings.playerCount, lowGfx);
 
     if (!currentSettings.randomLevels) {
         LoadLevelset(DATA_DIR "/data/levels");
@@ -335,12 +397,14 @@ void BubbleGame::NewGame(SetupSettings setup) {
     FrozenBubble::Instance()->startTime = SDL_GetTicks();
     FrozenBubble::Instance()->currentState = MainGame;
 
-    ChooseFirstBubble(bubbleArrays[0]);
+    ChooseFirstBubble(bubbleArrays);
 }
 
-void RemoveArray(BubbleArray &bArray) {
-    for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
-        bArray.bubbleMap[i].clear();
+void RemoveArray(BubbleArray *bArray, int playerCount) {
+    for (int i = 0; i < playerCount; i++) {
+        for (size_t j = 0; j < bArray[i].bubbleMap.size(); j++) {
+            bArray[i].bubbleMap[j].clear();
+        }
     }
 }
 
@@ -356,13 +420,28 @@ void BubbleGame::ReloadGame(int level) {
     firstRenderDone = false;
 
     gameFinish = gameWon = gameLost = false;
+    gameMpDone = false;
 
     switch (currentSettings.playerCount) {
         case 2:
+            bubbleArrays[0].penguinSprite.PlayAnimation(0);
+            bubbleArrays[0].shooterSprite.angle = PI/2.0f;
+            bubbleArrays[0].bubbleOffset = {354, 40};
+            bubbleArrays[0].turnsToCompress = 12;
+            bubbleArrays[0].mpWinner = false;
+            bubbleArrays[0].mpDone = false;
+            bubbleArrays[0].hurryTimer = bubbleArrays[0].warnTimer = 0;
 
+            bubbleArrays[1].penguinSprite.PlayAnimation(0);
+            bubbleArrays[1].shooterSprite.angle = PI/2.0f;
+            bubbleArrays[1].bubbleOffset = {31, 40};
+            bubbleArrays[1].turnsToCompress = 12;
+            bubbleArrays[1].playerAssigned = 1;
+            bubbleArrays[1].mpWinner = false;
+            bubbleArrays[1].mpDone = false;
+            bubbleArrays[1].hurryTimer = bubbleArrays[1].warnTimer = 0;
             break;
         case 1:
-            RemoveArray(bubbleArrays[0]);
             bubbleArrays[0].penguinSprite.PlayAnimation(0);
             bubbleArrays[0].shooterSprite.angle = PI/2.0f;
             bubbleArrays[0].bubbleOffset = {190, 51};
@@ -370,26 +449,33 @@ void BubbleGame::ReloadGame(int level) {
             bubbleArrays[0].numSeparators = 0;
             bubbleArrays[0].turnsToCompress = 9;
             bubbleArrays[0].dangerZone = 12;
-            SetupGameMetrics(bubbleArrays[0], currentSettings.playerCount, lowGfx);
+            bubbleArrays[0].hurryTimer = bubbleArrays[0].warnTimer = 0;
             break;
     }
 
+    RemoveArray(bubbleArrays, currentSettings.playerCount);
+    SetupGameMetrics(bubbleArrays, currentSettings.playerCount, lowGfx);
+
     if (!currentSettings.randomLevels) {
         LoadLevel(level);
-        for (int i = 0; i < currentSettings.playerCount; i++) ChooseFirstBubble(bubbleArrays[i]);
+        ChooseFirstBubble(bubbleArrays);
     }
     else {
         for (int i = 0; i < currentSettings.playerCount; i++) {
             RandomLevel(bubbleArrays[i]);
-            ChooseFirstBubble(bubbleArrays[i]);
         }
+        ChooseFirstBubble(bubbleArrays);
     }
     
 }
 
 void BubbleGame::LaunchBubble(BubbleArray &bArray) {
     audMixer->PlaySFX("launch");
-    singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {640/2 - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
+    if (currentSettings.playerCount == 1) singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {SCREEN_CENTER_X - 19, 480 - 89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
+    else { // 2p for now
+        if (bArray.playerAssigned == 0) singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {SCREEN_CENTER_X+144, 480-89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
+        else singleBubbles.push_back({bArray.playerAssigned, bArray.curLaunch, {SCREEN_CENTER_X-176, 480-89}, {}, bArray.shooterSprite.angle, false, true, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx});
+    }
     PickNextBubble(bArray);
     FrozenBubble::Instance()->totalBubbles++;
     bArray.hurryTimer = 0;
@@ -398,27 +484,53 @@ void BubbleGame::LaunchBubble(BubbleArray &bArray) {
 void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
     if (gameFinish) return;
 
-    if (bArray.hurryTimer >= TIME_HURRY_WARN) {
-        if (bArray.warnTimer <= HURRY_WARN_FC / 2){
-            if(bArray.warnTimer == 0) audMixer->PlaySFX("hurry");
-            SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), bArray.hurryTexture, nullptr, &bArray.hurryRct);
+    if (bArray.playerAssigned == 0) {
+        bArray.shooterAction = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_UP];
+        bArray.shooterLeft = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT];
+        bArray.shooterRight = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT];
+        bArray.shooterCenter = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN];
+    }
+    else if (bArray.playerAssigned == 1) {
+        bArray.shooterAction = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_C];
+        bArray.shooterLeft = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_X];
+        bArray.shooterRight = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_V];
+        bArray.shooterCenter = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_D]; 
+    }
+
+    if (currentSettings.playerCount < 2) {
+        if (bArray.hurryTimer >= TIME_HURRY_WARN) {
+            if (bArray.warnTimer <= HURRY_WARN_FC / 2){
+                if(bArray.warnTimer == 0) audMixer->PlaySFX("hurry");
+                SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), bArray.hurryTexture, nullptr, &bArray.hurryRct);
+            }
+            bArray.warnTimer++;
+            if (bArray.warnTimer > HURRY_WARN_FC) {
+                bArray.warnTimer = 0;
+            }
+            if (bArray.hurryTimer >= TIME_HURRY_MAX) {
+                bArray.shooterAction = true;
+            }
         }
-        bArray.warnTimer++;
-        if (bArray.warnTimer > HURRY_WARN_FC) {
-            bArray.warnTimer = 0;
-        }
-        if (bArray.hurryTimer >= TIME_HURRY_MAX) {
-            bArray.shooterAction = true;
+    }
+    else {
+        if (bArray.hurryTimer >= TIME_HURRY_WARN_MP) {
+            if (bArray.warnTimer <= HURRY_WARN_MP_FC / 2){
+                if(bArray.warnTimer == 0) audMixer->PlaySFX("hurry");
+                SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), bArray.hurryTexture, nullptr, &bArray.hurryRct);
+            }
+            bArray.warnTimer++;
+            if (bArray.warnTimer > HURRY_WARN_MP_FC) {
+                bArray.warnTimer = 0;
+            }
+            if (bArray.hurryTimer >= TIME_HURRY_MAX_MP) {
+                bArray.shooterAction = true;
+            }
         }
     }
     bArray.hurryTimer++;
 
     float &angle = bArray.shooterSprite.angle;
     Penguin &penguin = bArray.penguinSprite;
-
-    bArray.shooterLeft = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT];
-    bArray.shooterRight = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT];
-    bArray.shooterCenter = SDL_GetKeyboardState(NULL)[SDL_SCANCODE_DOWN];
 
     if(bArray.shooterAction == true && bArray.newShoot == true) {
         penguin.sleeping = 0;
@@ -458,10 +570,12 @@ void BubbleGame::UpdatePenguin(BubbleArray &bArray) {
 }
 
 // only called for a new game.
-void BubbleGame::ChooseFirstBubble(BubbleArray &bArray) {
-    std::vector<int> currentBubbles = bArray.remainingBubbles();
-    bArray.curLaunch = currentBubbles[ranrange(1, currentBubbles.size()) - 1];
-    bArray.nextBubble = currentBubbles[ranrange(1, currentBubbles.size()) - 1];
+void BubbleGame::ChooseFirstBubble(BubbleArray *bArray) {
+    for (int i = 0; i < currentSettings.playerCount; i++) {
+        std::vector<int> currentBubbles = bArray[i].remainingBubbles();
+        bArray[i].curLaunch = currentBubbles[ranrange(1, currentBubbles.size()) - 1];
+        bArray[i].nextBubble = currentBubbles[ranrange(1, currentBubbles.size()) - 1];
+    }
 }
 
 void BubbleGame::PickNextBubble(BubbleArray &bArray) {
@@ -665,8 +779,33 @@ void BubbleGame::DoFrozenAnimation(BubbleArray &bArray, int &waitTime){
                 else continue;
             }
         }
-        audMixer->PlaySFX("noh");
-        gameLost = true;
+        if (currentSettings.playerCount < 2) {
+            audMixer->PlaySFX("noh");
+            gameLost = true;
+        }
+        else bArray.mpDone = true;
+    }
+    else waitTime--;
+}
+
+void BubbleGame::DoWinAnimation(BubbleArray &bArray, int &waitTime){
+    if (waitTime <= 0) {
+        waitTime = EXPLODE_FRAMEWAIT;
+        for (int i = (int)bArray.bubbleMap.size() - 1; i >= 0; i--) {
+            for (int j = (int)bArray.bubbleMap[i].size() - 1; j >= 0; j--) {
+                if (bArray.bubbleMap[i][j].bubbleId != -1) {
+                    SingleBubble bubbly = {bArray.playerAssigned, bArray.curLaunch, bArray.bubbleMap[i][j].pos, {}, bArray.shooterSprite.angle, false, false, bArray.leftLimit, bArray.rightLimit, bArray.topLimit, lowGfx};
+                    bubbly.CopyBubbleProperties(&bArray.bubbleMap[i][j]);
+                    bubbly.GenerateFreeFall(true, 0);
+                    singleBubbles.push_back(bubbly);
+                    bArray.bubbleMap[i][j].bubbleId = -1;
+                    bArray.bubbleMap[i][j].playerBubble = false;
+                    return;
+                }
+                else continue;
+            }
+        }
+        bArray.mpDone = true;
     }
     else waitTime--;
 }
@@ -677,7 +816,7 @@ void BubbleGame::DoPrelightAnimation(BubbleArray &bArray, int &waitTime){
             for (size_t i = 0; i < bArray.bubbleMap.size(); i++) {
                 if (lowGfx) continue;
                 for (size_t j = 0; j < bArray.bubbleMap[i].size(); j++) {
-                    if (j == (size_t)alertColumn) {
+                    if (j == (size_t)bArray.alertColumn) {
                         bArray.bubbleMap[i][j].shining = true;
                     }
                     else {
@@ -686,10 +825,10 @@ void BubbleGame::DoPrelightAnimation(BubbleArray &bArray, int &waitTime){
                     }
                 }
             }
-            alertColumn++;
-            if (alertColumn > 8) {
+            bArray.alertColumn++;
+            if (bArray.alertColumn > 8) {
                 waitTime = bArray.waitPrelight;
-                alertColumn = 0;
+                bArray.alertColumn = 0;
             }
             bArray.framePrelight = PRELIGHT_FRAMEWAIT;
         }
@@ -706,27 +845,84 @@ void ResetPrelight(BubbleArray &bArray) {
     }
 }
 
+void BubbleGame::ExpandNewLane(BubbleArray &bArray) {
+    int newSize = bArray.bubbleMap[0].size() == 7 ? 8 : 7;
+    for (std::size_t i = bArray.bubbleMap.size() - 1; i > 0; --i) {
+        bArray.bubbleMap[i] = bArray.bubbleMap[i - 1];
+        for (Bubble &bubble : bArray.bubbleMap[i]) {
+            bubble.pos.y += 28;
+        }
+    }
+    bArray.bubbleMap[0].clear();
+
+    int bubbleSize = 32;
+    int initBubbleY = (int)(bubbleSize / 1.15);
+
+    SDL_Point &offset = bArray.bubbleOffset;
+    int smallerSep = newSize % 2 == 0 ? 0 : bubbleSize / 2;
+    for (int j = 0; j < newSize; j++)
+    {
+        bArray.bubbleMap[0].push_back(Bubble{ranrange(0, 7), {(smallerSep + bubbleSize * ((int)j)) + offset.x, offset.y}});
+    }
+}
+
+void BubbleGame::Update2PText() {
+    char plyp[16];
+    sprintf(plyp, "%i", winsP1);
+    winsP1Text.UpdateText(renderer, plyp, 0);
+    winsP1Text.UpdatePosition({(SCREEN_CENTER_X + 160), 12});
+
+    sprintf(plyp, "%i", winsP2);
+    winsP2Text.UpdateText(renderer, plyp, 0);
+    winsP2Text.UpdatePosition({(SCREEN_CENTER_X - 170), 12});
+}
+
 void BubbleGame::CheckGameState(BubbleArray &bArray) {
     bArray.turnsToCompress--;
     if (bArray.turnsToCompress == 1) bArray.waitPrelight = PRELIGHT_FAST;
     if (bArray.turnsToCompress == 0) {
         ResetPrelight(bArray);
         bArray.waitPrelight = PRELIGHT_SLOW;
-        bArray.turnsToCompress = 9;
-        bArray.dangerZone--;
-        bArray.numSeparators++;
-        bArray.ExpandOffset(0, 28);
-        bArray.compressorRct.y += 28;
-        audMixer->PlaySFX("newroot_solo");
+        if (currentSettings.playerCount < 2) {
+            bArray.turnsToCompress = 9;
+            bArray.dangerZone--;
+            bArray.numSeparators++;
+            bArray.ExpandOffset(0, 28);
+            bArray.compressorRct.y += 28;
+            audMixer->PlaySFX("newroot_solo");
+        }
+        else {
+            ExpandNewLane(bArray);
+            bArray.turnsToCompress = 12;
+            audMixer->PlaySFX("newroot");
+        }
     }
     if (bArray.allClear()) {
         gameFinish = true;
-        gameWon = true;
+        if (currentSettings.playerCount < 2) gameWon = true;
+        else {
+            audMixer->PlaySFX("lose");
+            bArray.mpWinner = true;
+            if (bArray.playerAssigned == 0) winsP1++;
+            else winsP2++;
+
+            Update2PText();
+        }
         panelRct = {SCREEN_CENTER_X - 173, 480 - 289, 329, 159};
         bArray.penguinSprite.PlayAnimation(10);
     }
     if (bArray.bubbleOnDanger()) {
         gameFinish = true;
+        if (currentSettings.playerCount == 2) {
+            int assigned = bArray.playerAssigned == 0 ? 1 : 0;
+            if (assigned == 0) winsP1++;
+            else winsP2++;
+
+            bubbleArrays[assigned].mpWinner = true;
+            bubbleArrays[assigned].penguinSprite.PlayAnimation(10);
+
+            Update2PText();
+        }
         audMixer->PlaySFX("lose");
         panelRct = {SCREEN_CENTER_X - 173, 480 - 248, 345, 124};
         bArray.curLaunchRct = {bArray.curLaunchRct.x - 1, bArray.curLaunchRct.y - 1, 34, 48};
@@ -786,37 +982,68 @@ void BubbleGame::Render() {
         if (gameFinish && !gameWon) SDL_RenderCopy(rend, imgBubbleFrozen, nullptr, &curArray.frozenBottomRct);
 
         UpdatePenguin(curArray);
-        if(!lowGfx) {
-            curArray.penguinSprite.Render();
-            curArray.shooterSprite.Render();
-        } else {
-            curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
-            curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(curArray.shooterSprite.angle)));
-            SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
-        }
+        if(!lowGfx) curArray.penguinSprite.Render();
+        curArray.shooterSprite.Render(lowGfx);
+            
     }
-    else { //iterate until all penguins are rendered
+    else { //iterate until all penguins & status are rendered
         for (int i = 0; i < currentSettings.playerCount; i++) {
             BubbleArray &curArray = bubbleArrays[i];
 
-            UpdateSingleBubbles(i);
-            for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
-            for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
+            SDL_Rect rct;
+            for (int i = 1; i < 13; i++) {
+                rct.x = curArray.rightLimit;
+                rct.y = 104 - (7 * i) - i;
+                rct.w = rct.h = 7;
+                SDL_RenderCopy(rend, dotTexture[i == curArray.turnsToCompress ? 1 : 0], nullptr, &rct);
+            }
 
-            SDL_RenderCopy(rend, imgBubbles[curArray.curLaunch], nullptr, new SDL_Rect{640/2 - 16, 480 - 89, 32, 32});
-            SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, new SDL_Rect{640/2 - 16, 480 - 40, 32, 32});
-            SDL_RenderCopy(rend, onTopTexture, nullptr, new SDL_Rect{640/2 - 19, 480 - 43, 39, 39});
+            SDL_RenderCopy(rend, gameFinish && !curArray.mpWinner ? imgBubbleFrozen : imgBubbles[curArray.curLaunch], nullptr, &curArray.curLaunchRct);
+            SDL_RenderCopy(rend, imgBubbles[curArray.nextBubble], nullptr, &curArray.nextBubbleRct);
+            SDL_RenderCopy(rend, onTopTexture, nullptr, &curArray.onTopRct);
+            if (gameFinish && !curArray.mpWinner) SDL_RenderCopy(rend, imgBubbleFrozen, nullptr, &curArray.frozenBottomRct);
+
+            if (curArray.turnsToCompress <= 2) {
+                DoPrelightAnimation(curArray, curArray.prelightTime);
+            }
+            for (const std::vector<Bubble> &vecBubble : curArray.bubbleMap) for (Bubble bubble : vecBubble) bubble.Render(rend, imgBubbles, imgBubblePrelight, imgBubbleFrozen);
+    
+
+            if(gameFinish) {
+                if (!curArray.mpWinner) DoFrozenAnimation(curArray, curArray.frozenWait);
+                else {
+                    DoWinAnimation(curArray, curArray.explodeWait);
+                    idxMPWinner = i;
+                }
+            }
 
             UpdatePenguin(curArray);
-            if(!lowGfx) {
-                curArray.penguinSprite.Render();
-                curArray.shooterSprite.Render();
-            } else {
-                curArray.lGfxShooterRct.x = (int)(SCREEN_CENTER_X + (LAUNCHER_DIAMETER * cosf(curArray.shooterSprite.angle)));
-                curArray.lGfxShooterRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(curArray.shooterSprite.angle)));
-                SDL_RenderCopy(rend, lowShooterTexture, nullptr, &curArray.lGfxShooterRct);
+            if(!lowGfx) curArray.penguinSprite.Render();
+            curArray.shooterSprite.Render(lowGfx);
+
+            UpdateSingleBubbles(i);
+        }
+
+        if (gameFinish) {
+            if (currentSettings.playerCount == 2) {
+                if (gameMpDone) SDL_RenderCopy(rend, multiStatePanels[idxMPWinner], nullptr, &panelRct);
+                else {
+                    for (int i = 0; i < currentSettings.playerCount; i++) {
+                        if (bubbleArrays[i].mpDone == false) {
+                            gameMpDone = false;
+                            break;
+                        } else gameMpDone = true;
+                    }
+                }
             }
         }
+
+        if(singleBubbles.size() > 0) {
+            for (SingleBubble &bubble : singleBubbles) bubble.Render(rend, imgBubbles);
+        }
+
+        SDL_RenderCopy(rend, winsP1Text.Texture(), nullptr, winsP1Text.Coords());
+        SDL_RenderCopy(rend, winsP2Text.Texture(), nullptr, winsP2Text.Coords());
     }
 
     SDL_RenderCopy(rend, inGameText.Texture(), nullptr, inGameText.Coords());
@@ -870,9 +1097,6 @@ void BubbleGame::HandleInput(SDL_Event *e) {
         case SDL_KEYDOWN:
             if(e->key.repeat) break;
             switch(e->key.keysym.sym) {
-                case SDLK_UP:
-                    if (gameFinish == false) bubbleArrays[0].shooterAction = true;
-                    break;
                 case SDLK_ESCAPE:
                     QuitToTitle();
                     break;
@@ -885,7 +1109,7 @@ void BubbleGame::HandleInput(SDL_Event *e) {
                     break;
                 case SDLK_RETURN:
                     if (!gameFinish || (gameFinish && singleBubbles.size() > 0)) break;
-                    if (gameWon) ReloadGame(++curLevel);
+                    if (gameWon || gameMpDone) ReloadGame(++curLevel);
                     else if (gameLost) ReloadGame(curLevel);
                     break;
             }
@@ -894,7 +1118,7 @@ void BubbleGame::HandleInput(SDL_Event *e) {
 }
 
 void BubbleGame::QuitToTitle() {
-    RemoveArray(bubbleArrays[0]);
+    RemoveArray(bubbleArrays, currentSettings.playerCount);
     FrozenBubble::Instance()->CallMenuReturn();
     firstRenderDone = false;
 }

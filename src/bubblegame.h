@@ -13,14 +13,15 @@
 
 #pragma region "BubbleGame Defines"
 #define TIME_APPEARS_NEW_ROOT_MP 11
-#define TIME_HURRY_WARN_MP 250 * 2
-#define TIME_HURRY_MAX_MP 375 * 2
+#define TIME_HURRY_WARN_MP 750
+#define TIME_HURRY_MAX_MP 1125
 
 #define TIME_APPEARS_NEW_ROOT 8
 #define TIME_HURRY_WARN 720
 #define TIME_HURRY_MAX 1182
 
 #define HURRY_WARN_FC 154
+#define HURRY_WARN_MP_FC 125 
 
 // frame count for animations
 #define PENGUIN_HANDLEFC 71
@@ -44,6 +45,7 @@
 #define COMPRESSOR_OFFSET 28
 #define FREEFALL_CONSTANT 0.5
 #define FROZEN_FRAMEWAIT 2
+#define EXPLODE_FRAMEWAIT 2
 
 #define PRELIGHT_SLOW 60
 #define PRELIGHT_FAST 20
@@ -199,9 +201,15 @@ struct Shooter {
     SDL_Renderer *renderer;
     float angle = PI/2.0f;
     SDL_Rect rect = {};
+    SDL_Rect lowRct = {};
 
-    void Render(){
-        SDL_RenderCopyEx(renderer, texture, nullptr, &rect, (((angle*CANON_ROTATIONS)/(PI/2.0f) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
+    void Render(bool lowGfx){
+        if(!lowGfx) SDL_RenderCopyEx(renderer, texture, nullptr, &rect, (((angle*CANON_ROTATIONS)/(PI/2.0f) + 0.5) - CANON_ROTATIONS), NULL, SDL_FLIP_NONE);
+        else {
+            lowRct.x = (int)((rect.x - LAUNCHER_DIAMETER)  + (LAUNCHER_DIAMETER * cosf(angle)));
+            lowRct.y = (int)((480 - 69) - (LAUNCHER_DIAMETER * sinf(angle)));
+            SDL_RenderCopy(renderer, texture, nullptr, &lowRct);
+        }
     }
 };
 
@@ -217,9 +225,9 @@ struct BubbleArray {
     SDL_Point bubbleOffset;
     Penguin penguinSprite;
     Shooter shooterSprite;
-    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, 
-        frozenWait = FROZEN_FRAMEWAIT, waitPrelight = PRELIGHT_SLOW, prelightTime = waitPrelight, framePrelight = PRELIGHT_FRAMEWAIT, hurryTimer = 0, warnTimer = 0;
-    bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true;
+    int playerAssigned, nextBubble, curLaunch, leftLimit, rightLimit, topLimit, numSeparators, turnsToCompress = 9, dangerZone = 12, explodeWait = EXPLODE_FRAMEWAIT,
+        frozenWait = FROZEN_FRAMEWAIT, waitPrelight = PRELIGHT_SLOW, prelightTime = waitPrelight, framePrelight = PRELIGHT_FRAMEWAIT, hurryTimer = 0, warnTimer = 0, alertColumn = 0;
+    bool shooterLeft = false, shooterRight = false, shooterCenter = false, shooterAction = false, newShoot = true, mpWinner = false, mpDone = false;
 
     SDL_Rect compressorRct, lGfxShooterRct, curLaunchRct, nextBubbleRct, onTopRct, frozenBottomRct, hurryRct;
     SDL_Texture *hurryTexture;
@@ -296,7 +304,7 @@ public:
     bool playedPause = false;
 private:
     const SDL_Renderer *renderer;
-    SDL_Texture *background, *pauseBackground = nullptr, *prePauseBackground = nullptr;
+    SDL_Texture *background = nullptr, *pauseBackground = nullptr, *prePauseBackground = nullptr;
 
     SDL_Texture *imgColorblindBubbles[BUBBLE_STYLES];
     SDL_Texture *imgBubbles[BUBBLE_STYLES];
@@ -320,30 +328,35 @@ private:
 
     SDL_Rect panelRct;
 
-    bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false, firstRenderDone = false;
+    bool lowGfx = false, gameWon = false, gameLost = false, gameFinish = false, firstRenderDone = false, gameMpDone = false;
 
     bool chainReaction = false;
-    int timeLeft = 0, alertColumn = 0, curLevel = 1, pauseFrame = 0, nextPauseUpd = 2;
+    int timeLeft = 0, curLevel = 1, pauseFrame = 0, nextPauseUpd = 2, idxMPWinner = 0;
+    int winsP1 = 0, winsP2 = 0; // 2p mode stuff
     Uint32 timePaused = 0;
 
     SetupSettings currentSettings;
     AudioMixer *audMixer;
 
-    TTFText inGameText;
+    TTFText inGameText, winsP1Text, winsP2Text;
 
     std::vector<std::array<std::vector<int>, 10>> loadedLevels;
     BubbleArray bubbleArrays[5]; //5 custom arrays wtih different players
 
-    void ChooseFirstBubble(BubbleArray &bArray);
+    void ChooseFirstBubble(BubbleArray *bArray);
     void PickNextBubble(BubbleArray &bArray);
     void LaunchBubble(BubbleArray &bArray);
     void UpdateSingleBubbles(int id);
+
+    void ExpandNewLane(BubbleArray &bArray);
+    void Update2PText();
     
     void CheckPossibleDestroy(BubbleArray &bArray);
     void CheckAirBubbles(BubbleArray &bArray);
     void CheckGameState(BubbleArray &bArray);
 
     void DoFrozenAnimation(BubbleArray &bArray, int &waitTime);
+    void DoWinAnimation(BubbleArray &bArray, int &waitTime);
     void DoPrelightAnimation(BubbleArray &bArray, int &waitTime);
 
     void RandomLevel(BubbleArray &bArray);

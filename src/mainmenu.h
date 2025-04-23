@@ -82,7 +82,7 @@ private:
     SDL_Surface *overlookSfc = nullptr;
     SDL_Texture *idleSPButtons[SP_OPT];
     int activeSPIdx = 0, overlookIndex = 0;
-    bool showingSPPanel = false;
+    bool showingSPPanel = false, showing2PPanel = false;
     const struct spPanelEntry {
         std::string option;
         int pivot;
@@ -90,6 +90,7 @@ private:
     
     SDL_Rect voidPanelRct = {(640/2) - (341/2), (480/2) - (280/2), 341, 280};
     void SPPanelRender();
+    void TPPanelRender();
 
     //Options panel render
     bool showingOptPanel = false, awaitKp = false, runDelay = false;

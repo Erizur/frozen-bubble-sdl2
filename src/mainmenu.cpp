@@ -159,7 +159,7 @@ void MainMenu::HandleInput(SDL_Event *e){
     switch(e->type) {
         case SDL_KEYDOWN:
             if(e->key.repeat) break;
-            if (awaitKp && showingOptPanel && e->key.keysym.sym != SDLK_ESCAPE) {
+            if (awaitKp && (showingOptPanel || showing2PPanel) && e->key.keysym.sym != SDLK_ESCAPE) {
                 AudioMixer::Instance()->PlaySFX("typewriter");
                 lastOptInput = e->key.keysym.sym;
                 awaitKp = false;
@@ -186,9 +186,9 @@ void MainMenu::HandleInput(SDL_Event *e){
                         showingSPPanel = false;
                         break;
                     }
-                    if (showingOptPanel) {
+                    if (showingOptPanel || showing2PPanel) {
                         AudioMixer::Instance()->PlaySFX("cancel");
-                        showingOptPanel = false;
+                        showingOptPanel = showing2PPanel = false;
                         awaitKp = false;
                         break;
                     }
@@ -216,6 +216,7 @@ void MainMenu::Render(void) {
     BlinkRender();
     CandyRender();
     SPPanelRender();
+    TPPanelRender();
     OptPanelRender();
 }
 
@@ -367,6 +368,30 @@ void MainMenu::SPPanelRender() {
     SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), panelText.Texture(), nullptr, panelText.Coords());
 }
 
+void MainMenu::TPPanelRender() {
+    if (!showing2PPanel) return;
+
+    if(awaitKp == false && lastOptInput != SDLK_UNKNOWN && !runDelay) { // we got our response
+        chainReaction = lastOptInput == SDLK_y ? true : false;
+
+        char pnltxt[256];
+        sprintf(pnltxt, "2-player game\n\n\nEnable chain reaction?\n\n\nY or N?:        %s\n\n\n\n\nEnjoy the game!", SDL_GetKeyName(lastOptInput));
+        panelText.UpdateText(const_cast<SDL_Renderer *>(renderer), pnltxt, 0);
+        panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
+
+        delayTime = 120;
+        runDelay = true;
+    }
+
+    if (runDelay){
+        if (delayTime == 0) SetupNewGame(selectedMode);
+        else delayTime--;
+    }
+
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), voidPanelBG, nullptr, &voidPanelRct);
+    SDL_RenderCopy(const_cast<SDL_Renderer*>(renderer), panelText.Texture(), nullptr, panelText.Coords());
+}
+
 void MainMenu::OptPanelRender() {
     if (!showingOptPanel) return;
 
@@ -392,7 +417,7 @@ void MainMenu::OptPanelRender() {
 }
 
 void MainMenu::press() {
-    if (showingOptPanel) return;
+    if (showingOptPanel || showing2PPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_selected");
 
     if (showingSPPanel) {
@@ -406,7 +431,7 @@ void MainMenu::press() {
 
 void MainMenu::down()
 {
-    if (showingOptPanel) return;
+    if (showingOptPanel || showing2PPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_change");
 
     if (showingSPPanel) {
@@ -428,7 +453,7 @@ void MainMenu::down()
 
 void MainMenu::up()
 {
-    if (showingOptPanel) return;
+    if (showingOptPanel || showing2PPanel) return;
     AudioMixer::Instance()->PlaySFX("menu_change");
 
     if (showingSPPanel) {
@@ -463,6 +488,12 @@ void MainMenu::ShowPanel(int which) {
             panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
             selectedMode = 3;
             break;
+        case 2: // 2p menu
+            showing2PPanel = awaitKp = true;
+            panelText.UpdateText(const_cast<SDL_Renderer *>(renderer), "2-player game\n\n\nEnable chain reaction?\n\n\nY or N?:          \n", 0);
+            panelText.UpdatePosition({(640/2) - (panelText.Coords()->w / 2), (480/2) - 120});
+            selectedMode = 2;
+            break;
         case 6:
             HighscoreManager::Instance()->ShowScoreScreen(0);
             break;
@@ -476,6 +507,9 @@ void MainMenu::SetupNewGame(int mode) {
     switch(mode){
         case 1:
             FrozenBubble::Instance()->bubbleGame()->NewGame({chainReaction, 1, false});
+            break;
+        case 2:
+            FrozenBubble::Instance()->bubbleGame()->NewGame({chainReaction, 2, false, true});
             break;
         case 3:
             FrozenBubble::Instance()->bubbleGame()->NewGame({chainReaction, 1, false, true});
@@ -491,6 +525,7 @@ void MainMenu::ReturnToMenu() {
     candyIndex = 0;
     bannerCurpos = 0;
     showingSPPanel = false;
+    showing2PPanel = false;
     showingOptPanel = false;
     awaitKp = false;
     selectedMode = 0;

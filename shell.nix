@@ -14,6 +14,9 @@ pkgs.mkShell {
      pkgs.iniparser
      pkgs.pkg-config
      pkgs.glib
+
+     # Original game for development purposes
+     pkgs.frozen-bubble
    ];
   # Use clang's stdenv
   stdenv = pkgs.llvmPackages_latest.stdenv;
