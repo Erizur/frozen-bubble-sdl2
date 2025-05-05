@@ -1,52 +1,32 @@
+# Based on the template from the sweepr repo: https://github.com/Grazen0/sweepr/blob/main/flake.nix
 {
+  description = "SDL2 C++ Port of Frozen-Bubble 2";
+
   inputs = {
-    nixpkgs = {
-      url = "github:nixos/nixpkgs/24.11";
-    };
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-    };
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
-  outputs = { nixpkgs, flake-utils, ... }: flake-utils.lib.eachDefaultSystem (system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-      };
-      frozen-bubble-sdl2 = (with pkgs; stdenv.mkDerivation {
-          pname = "frozen-bubble-sdl2";
-          version = "0.1";
-          src = ./.;
-          nativeBuildInputs = [
-            clang
-	    clang-tools
-            cmake
-	    ninja
-	    SDL2
-	    SDL2.dev
- 	    SDL2_ttf
-	    SDL2_image
-	    SDL2_mixer
-	    iniparser
-	    pkg-config
-	    glib
-          ];
-          bu0ildPhase = "cd build && ninja -j $NIX_BUILD_CORES";
-          installPhase = ''
-            mkdir -p $out/bin
-            mv ./frozen-bubble $out/bin
-          '';
-        }
-      );
-    in rec {
-      defaultApp = flake-utils.lib.mkApp {
-        drv = defaultPackage;
-      };
-      defaultPackage = frozen-bubble-sdl2;
-      devShell = pkgs.mkShell {
-        buildInputs = [
-          frozen-bubble-sdl2
-        ];
-      };
-    }
-  );
+
+  outputs = {
+    self,
+    nixpkgs,
+  }: let
+    forAllSystems = nixpkgs.lib.genAttrs [
+      "aarch64-linux"
+      "i686-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
+
+    pkgsFor = nixpkgs.legacyPackages;
+  in {
+    packages = forAllSystems (system: rec {
+      frozen-bubble = pkgsFor.${system}.callPackage ./default.nix {};
+      default = frozen-bubble;
+    });
+
+    devShells = forAllSystems (system: {
+      default = pkgsFor.${system}.callPackage ./shell.nix {};
+    });
+  };
 }
