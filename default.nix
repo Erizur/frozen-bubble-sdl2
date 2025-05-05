@@ -19,7 +19,7 @@ pkgs.clangStdenv.mkDerivation {
 
   installPhase = ''
     mkdir -p $out/bin
-    cp build/frozen-bubble $out/bin/
+    cp build/frozen-bubble $out/bin/frozen-bubble-sdl2
   '';
 
   meta = with pkgs.lib; {
