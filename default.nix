@@ -6,7 +6,7 @@ pkgs.clangStdenv.mkDerivation {
   src = ./.;
 
   nativeBuildInputs = with pkgs; [cmake];
-  buildInputs = with pkgs; [clang ninja SDL2 SDL2.dev SDL2_ttf SDL2_image SDL2_mixer iniparser];
+  buildInputs = with pkgs; [clang ninja SDL2 SDL2.dev SDL2_ttf SDL2_image SDL2_mixer iniparser glib pkg-config];
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=Release"
