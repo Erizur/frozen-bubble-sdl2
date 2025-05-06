@@ -71,6 +71,8 @@ if(NOT DEFINED ASSET_PATH)
     set(ASSET_PATH \"${CMAKE_SOURCE_DIR}/share\")
 endif()
 
+message("Asset path is: ${ASSET_PATH}")
+
 target_compile_definitions(frozen-bubble
     PRIVATE DATA_DIR=${ASSET_PATH}
 )
