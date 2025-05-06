@@ -10,7 +10,7 @@ pkgs.clangStdenv.mkDerivation {
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=Release"
-    "-DDATA_DIR=$out/bin/"
+    "-DASSET_PATH=\"$out/bin\""
   ];
 
   buildPhase = ''

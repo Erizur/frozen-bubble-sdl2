@@ -67,11 +67,13 @@ add_executable(frozen-bubble
 set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
 set_property(TARGET frozen-bubble PROPERTY CXX_EXTENSIONS OFF)
 
-if(NOT DEFINED DATA_DIR)
-    set(DATA_DIR \"${CMAKE_SOURCE_DIR}/share\")
+if(NOT DEFINED ASSET_PATH)
+    set(ASSET_PATH \"${CMAKE_SOURCE_DIR}/share\")
 endif()
 
-add_compile_definitions(DATA_DIR)
+target_compile_definitions(frozen-bubble
+    PRIVATE DATA_DIR=${ASSET_PATH}
+)
 
 target_include_directories(frozen-bubble
     SYSTEM
