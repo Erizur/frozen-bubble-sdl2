@@ -68,13 +68,13 @@ set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
 set_property(TARGET frozen-bubble PROPERTY CXX_EXTENSIONS OFF)
 
 if(NOT DEFINED ASSET_PATH)
-    set(ASSET_PATH \"${CMAKE_SOURCE_DIR}/share\")
+    set(ASSET_PATH ${CMAKE_SOURCE_DIR}/share)
 endif()
 
 message("Asset path is: ${ASSET_PATH}")
 
 target_compile_definitions(frozen-bubble
-    PRIVATE DATA_DIR=${ASSET_PATH}
+    PRIVATE DATA_DIR=\"${ASSET_PATH}\"
 )
 
 target_include_directories(frozen-bubble

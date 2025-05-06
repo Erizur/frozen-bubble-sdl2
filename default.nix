@@ -10,17 +10,16 @@ pkgs.clangStdenv.mkDerivation {
 
   cmakeFlags = [
     "-DCMAKE_BUILD_TYPE=Release"
-    "-DASSET_PATH=\"$out/bin/share\""
   ];
 
   buildPhase = ''
-    cmake . -B build $cmakeFlags
+    cmake . -B build -DASSET_PATH=$out/bin/share $cmakeFlags
     cmake --build build
   '';
 
   installPhase = ''
     mkdir -p $out/bin
-    cp share $out/bin
+    cp -r ../share $out/bin
     cp build/frozen-bubble $out/bin/frozen-bubble-sdl2
   '';
 
