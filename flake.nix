@@ -3,7 +3,7 @@
   description = "SDL2 C++ Port of Frozen-Bubble 2";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
   };
 
   outputs = {
