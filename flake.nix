@@ -6,27 +6,30 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-  }: let
-    forAllSystems = nixpkgs.lib.genAttrs [
-      "aarch64-linux"
-      "i686-linux"
-      "x86_64-linux"
-      "aarch64-darwin"
-      "x86_64-darwin"
-    ];
+  outputs =
+    {
+      self,
+      nixpkgs,
+    }:
+    let
+      forAllSystems = nixpkgs.lib.genAttrs [
+        "aarch64-linux"
+        "i686-linux"
+        "x86_64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
 
-    pkgsFor = nixpkgs.legacyPackages;
-  in {
-    packages = forAllSystems (system: rec {
-      frozen-bubble = pkgsFor.${system}.callPackage ./default.nix {};
-      default = frozen-bubble;
-    });
+      pkgsFor = nixpkgs.legacyPackages;
+    in
+    {
+      packages = forAllSystems (system: rec {
+        frozen-bubble = pkgsFor.${system}.callPackage ./default.nix { };
+        default = frozen-bubble;
+      });
 
-    devShells = forAllSystems (system: {
-      default = pkgsFor.${system}.callPackage ./shell.nix {};
-    });
-  };
+      devShells = forAllSystems (system: {
+        default = pkgsFor.${system}.callPackage ./shell.nix { };
+      });
+    };
 }
