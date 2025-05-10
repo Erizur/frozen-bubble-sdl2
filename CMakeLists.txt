@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(frozen-bubble CXX)
+project(frozen-bubble-sdl2 CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -49,7 +49,7 @@ if(WIN32 OR MINGW)
     ENABLE_LANGUAGE(RC)
 endif()
 
-add_executable(frozen-bubble
+add_executable(frozen-bubble-sdl2
     src/frozenbubble.cpp
     src/main.cpp
     src/menubutton.cpp
@@ -64,8 +64,8 @@ add_executable(frozen-bubble
     ${RES_FILES}
 )
 
-set_property(TARGET frozen-bubble PROPERTY CXX_STANDARD 17)
-set_property(TARGET frozen-bubble PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET frozen-bubble-sdl2 PROPERTY CXX_STANDARD 17)
+set_property(TARGET frozen-bubble-sdl2 PROPERTY CXX_EXTENSIONS OFF)
 
 if(NOT DEFINED ASSET_PATH)
     set(ASSET_PATH ${CMAKE_SOURCE_DIR}/share)
@@ -73,11 +73,11 @@ endif()
 
 message("Asset path is: ${ASSET_PATH}")
 
-target_compile_definitions(frozen-bubble
+target_compile_definitions(frozen-bubble-sdl2
     PRIVATE DATA_DIR=\"${ASSET_PATH}\"
 )
 
-target_include_directories(frozen-bubble
+target_include_directories(frozen-bubble-sdl2
     SYSTEM
     PRIVATE ${SDL2_INCLUDE_DIRS}
     PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS}
@@ -85,7 +85,7 @@ target_include_directories(frozen-bubble
     PRIVATE ${SDL2_TTF_INCLUDE_DIRS}
 )
 
-target_link_libraries(frozen-bubble PRIVATE
+target_link_libraries(frozen-bubble-sdl2 PRIVATE
     SDL2::SDL2
     iniparser-static
     SDL2_image::SDL2_image
